@@ -1,0 +1,21 @@
+services:
+  # Python Flask Backend Web Service
+  - type: web
+    name: twinguard-backend
+    env: python
+    rootDir: backend
+    buildCommand: pip install -r requirements.txt
+    startCommand: gunicorn app:app
+    envVars:
+      - key: PORT
+        value: 10000
+      - key: JWT_SECRET
+        value: twinguard-super-secret-jwt-key-2026
+
+  # React Vite Frontend Static Site
+  - type: web
+    name: twinguard-frontend
+    env: static
+    rootDir: frontend
+    buildCommand: npm install && npm run build
+    staticPublishPath: ./dist
