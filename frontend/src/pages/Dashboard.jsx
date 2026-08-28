@@ -11,6 +11,7 @@ export default function Dashboard({
   alert,
   onNodeSelect,
   onQuickAttack,
+  onTriggerDefense,
   activeAttacks = []
 }) {
   const safeCount = statusData.safe_devices || devices.filter(d => d.status === 'SAFE').length;
@@ -22,26 +23,34 @@ export default function Dashboard({
     <div>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
         <div>
-          <h1 style={{ fontSize: '1.5rem', fontWeight: 700 }}>TwinGuard SOC Operations Center</h1>
+          <h1 style={{ fontSize: '1.5rem', fontWeight: 800, background: 'linear-gradient(135deg, #38bdf8, #a855f7)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
+            TwinGuard SOC Operations Center
+          </h1>
           <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>
             Real-time Cyber Attack & Automated Defense Digital Twin Monitoring
           </p>
         </div>
-        <div style={{ display: 'flex', gap: '0.75rem' }}>
-          <button className="btn btn-danger" onClick={() => onQuickAttack('Ransomware', 'Hospital Server')}>
-            <Radio size={16} /> Demo Ransomware Attack
+        <div style={{ display: 'flex', gap: '0.65rem' }}>
+          <button className="btn btn-danger" onClick={() => onQuickAttack('Ransomware', 'Core Hospital Server')}>
+            <ShieldAlert size={15} /> Attack
           </button>
-          <button className="btn btn-primary" onClick={() => onQuickAttack('DDoS', 'Firewall')}>
-            <Radio size={16} /> Demo DDoS Attack
+          <button className="btn btn-primary" onClick={() => onTriggerDefense && onTriggerDefense('Core Hospital Server', 'BLOCK_TRAFFIC')}>
+            <Shield size={15} /> Defense
+          </button>
+          <button className="btn btn-outline" onClick={() => onTriggerDefense && onTriggerDefense('Core Hospital Server', 'ISOLATE_DEVICE')}>
+            <Lock size={15} /> Isolate
           </button>
         </div>
+
+
       </div>
+
 
       <AlertBanner alert={alert} />
 
       {/* Metric Cards Grid */}
       <div className="grid-cards">
-        <StatCard title="Total Hospital Devices" value={devices.length || 12} icon={Cpu} color="var(--accent-blue)" subtitle="12 TwinGuard Nodes" />
+        <StatCard title="Total Hospital Devices" value={devices.length} icon={Cpu} color="var(--accent-blue)" subtitle={`${devices.length} TwinGuard Nodes`} />
         <StatCard title="Safe Devices" value={safeCount} icon={ShieldCheck} color="var(--accent-green)" subtitle="Operating normally" />
         <StatCard title="Devices Under Attack" value={attackCount} icon={ShieldAlert} color="var(--accent-red)" subtitle={attackCount > 0 ? "ATTACK IN PROGRESS" : "No active threats"} />
         <StatCard title="Defended Devices" value={defendedCount} icon={Shield} color="var(--accent-purple)" subtitle="Threat mitigated" />

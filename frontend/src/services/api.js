@@ -1,231 +1,283 @@
 /**
- * Service API Module for AI-Powered Hospital Cybersecurity Digital Twin
- * Connects to Flask REST API endpoints with graceful local fallback.
+ * Dynamic API Service Module for TwinGuard Hospital Cybersecurity Platform
+ * Communicates with Flask REST APIs and Firebase Firestore backend.
  */
 
-import { INITIAL_NODES } from '../data/initialNodes';
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000/api';
 
-const API_BASE_URL = 'http://localhost:5000/api';
-
-// In-memory fallback state if Flask backend is offline
-let localDevices = JSON.parse(JSON.stringify(INITIAL_NODES));
-let localAttacks = [];
-let localDefenses = [];
+function getAuthHeaders() {
+  const token = localStorage.getItem('twinguard_token');
+  const headers = { 'Content-Type': 'application/json' };
+  if (token) {
+    headers['Authorization'] = `Bearer ${token}`;
+  }
+  return headers;
+}
 
 export const api = {
-  // GET /api/devices
+  // --- AUTHENTICATION ---
+  async login(email, password) {
+    const formattedEmail = (email || '').trim().toLowerCase();
+    const formattedPassword = (password || '').trim();
+
+    const res = await fetch(`${API_BASE_URL}/auth/login`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email: formattedEmail, password: formattedPassword })
+    });
+
+    if (!res.ok) {
+      const errData = await res.json().catch(() => ({}));
+      throw new Error(errData.message || 'Invalid email or password');
+    }
+
+    return await res.json();
+  },
+
+  async register(email, password, name, role = 'Security Analyst') {
+    const res = await fetch(`${API_BASE_URL}/auth/register`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, password, name, role })
+    });
+
+    if (!res.ok) {
+      const errData = await res.json().catch(() => ({}));
+      throw new Error(errData.message || 'Registration failed');
+    }
+
+    return await res.json();
+  },
+
+  async getCurrentUser() {
+    const res = await fetch(`${API_BASE_URL}/auth/me`, {
+      headers: getAuthHeaders()
+    });
+
+    if (!res.ok) return null;
+    const data = await res.json();
+    return data.user;
+  },
+
+  // --- USER MANAGEMENT ---
+  async getUsers() {
+    const res = await fetch(`${API_BASE_URL}/users`, { headers: getAuthHeaders() });
+    if (!res.ok) return [];
+    return await res.json();
+  },
+
+  async updateUser(userId, updates) {
+    const res = await fetch(`${API_BASE_URL}/users/${userId}`, {
+      method: 'PUT',
+      headers: getAuthHeaders(),
+      body: JSON.stringify(updates)
+    });
+    return await res.json();
+  },
+
+  async deleteUser(userId) {
+    const res = await fetch(`${API_BASE_URL}/users/${userId}`, {
+      method: 'DELETE',
+      headers: getAuthHeaders()
+    });
+    return await res.json();
+  },
+
+  // --- ALERTS ---
+  async getAlerts() {
+    const res = await fetch(`${API_BASE_URL}/alerts`, { headers: getAuthHeaders() });
+    if (!res.ok) return [];
+    return await res.json();
+  },
+
+  async createAlert(alertData) {
+    const res = await fetch(`${API_BASE_URL}/alerts`, {
+      method: 'POST',
+      headers: getAuthHeaders(),
+      body: JSON.stringify(alertData)
+    });
+    return await res.json();
+  },
+
+  async updateAlert(alertId, updates) {
+    const res = await fetch(`${API_BASE_URL}/alerts/${alertId}`, {
+      method: 'PUT',
+      headers: getAuthHeaders(),
+      body: JSON.stringify(updates)
+    });
+    return await res.json();
+  },
+
+  async deleteAlert(alertId) {
+    const res = await fetch(`${API_BASE_URL}/alerts/${alertId}`, {
+      method: 'DELETE',
+      headers: getAuthHeaders()
+    });
+    return await res.json();
+  },
+
+  // --- INCIDENTS ---
+  async getIncidents() {
+    const res = await fetch(`${API_BASE_URL}/incidents`, { headers: getAuthHeaders() });
+    if (!res.ok) return [];
+    return await res.json();
+  },
+
+  async createIncident(incidentData) {
+    const res = await fetch(`${API_BASE_URL}/incidents`, {
+      method: 'POST',
+      headers: getAuthHeaders(),
+      body: JSON.stringify(incidentData)
+    });
+    return await res.json();
+  },
+
+  async updateIncident(incidentId, updates) {
+    const res = await fetch(`${API_BASE_URL}/incidents/${incidentId}`, {
+      method: 'PUT',
+      headers: getAuthHeaders(),
+      body: JSON.stringify(updates)
+    });
+    return await res.json();
+  },
+
+  async deleteIncident(incidentId) {
+    const res = await fetch(`${API_BASE_URL}/incidents/${incidentId}`, {
+      method: 'DELETE',
+      headers: getAuthHeaders()
+    });
+    return await res.json();
+  },
+
+  // --- DEVICES / DIGITAL TWINS ---
   async getDevices() {
-    try {
-      const res = await fetch(`${API_BASE_URL}/devices`);
-      if (res.ok) {
-        const data = await res.json();
-        localDevices = data;
-        return data;
-      }
-    } catch (err) {
-      // Return local fallback
-    }
-    return localDevices;
+    const res = await fetch(`${API_BASE_URL}/devices`, { headers: getAuthHeaders() });
+    if (!res.ok) return [];
+    return await res.json();
   },
 
-  // GET /api/status
+  async addDevice(deviceData) {
+    const res = await fetch(`${API_BASE_URL}/devices`, {
+      method: 'POST',
+      headers: getAuthHeaders(),
+      body: JSON.stringify(deviceData)
+    });
+    return await res.json();
+  },
+
+  async updateDevice(id, deviceData) {
+    const res = await fetch(`${API_BASE_URL}/devices/${id}`, {
+      method: 'PUT',
+      headers: getAuthHeaders(),
+      body: JSON.stringify(deviceData)
+    });
+    return await res.json();
+  },
+
+  async deleteDevice(id) {
+    const res = await fetch(`${API_BASE_URL}/devices/${id}`, {
+      method: 'DELETE',
+      headers: getAuthHeaders()
+    });
+    return await res.json();
+  },
+
+  // --- ATTACKS & DEFENSES ---
+  async simulateAttack(attackType, targetDevice, severity = 'CRITICAL') {
+    const res = await fetch(`${API_BASE_URL}/simulate-attack`, {
+      method: 'POST',
+      headers: getAuthHeaders(),
+      body: JSON.stringify({ attack_type: attackType, target_device: targetDevice, severity })
+    });
+    return await res.json();
+  },
+
+  async triggerAttack(attackType, targetDevice, severity = 'CRITICAL') {
+    return this.simulateAttack(attackType, targetDevice, severity);
+  },
+
+  async triggerDefense(targetDevice, actionCode = 'ISOLATE_DEVICE', attackId = 'ATK-MANUAL') {
+    const res = await fetch(`${API_BASE_URL}/trigger-defense`, {
+      method: 'POST',
+      headers: getAuthHeaders(),
+      body: JSON.stringify({ attack_id: attackId, action: actionCode, action_code: actionCode, target_device: targetDevice, target: targetDevice })
+    });
+    return await res.json();
+  },
+
+  async logSecurityEvent(eventType, targetDevice, severity, description) {
+    const res = await fetch(`${API_BASE_URL}/events`, {
+      method: 'POST',
+      headers: getAuthHeaders(),
+      body: JSON.stringify({
+        event_type: eventType,
+        target_device: targetDevice,
+        severity: severity,
+        description: description
+      })
+    });
+    return await res.json();
+  },
+
+  async toggleAutoDefense(enabled) {
+    const res = await fetch(`${API_BASE_URL}/toggle-autodefense`, {
+      method: 'POST',
+      headers: getAuthHeaders(),
+      body: JSON.stringify({ enabled })
+    });
+    return await res.json();
+  },
+
+  async getAIRecommendation(targetDevice, attackType) {
+    const res = await fetch(`${API_BASE_URL}/ai-recommendation`, {
+      method: 'POST',
+      headers: getAuthHeaders(),
+      body: JSON.stringify({ target_device: targetDevice, attack_type: attackType })
+    });
+    if (!res.ok) return null;
+    return await res.json();
+  },
+
   async getStatus() {
-    try {
-      const res = await fetch(`${API_BASE_URL}/status`);
-      if (res.ok) {
-        return await res.json();
-      }
-    } catch (err) {
-      // Calculate from local devices
-    }
-    const safe = localDevices.filter(d => d.status === 'SAFE').length;
-    const underAttack = localDevices.filter(d => d.status === 'UNDER_ATTACK').length;
-    const defended = localDevices.filter(d => d.status === 'DEFENDED').length;
-    const isolated = localDevices.filter(d => d.status === 'ISOLATED').length;
-    
-    // Simple local risk score calculation
-    let maxRisk = Math.max(...localDevices.map(d => d.risk_score || 15));
-    let avgRisk = Math.round(localDevices.reduce((acc, d) => acc + (d.risk_score || 15), 0) / localDevices.length);
-
-    return {
-      overall_risk_score: underAttack > 0 ? Math.max(75, maxRisk) : avgRisk,
-      risk_level: underAttack > 0 ? "CRITICAL" : avgRisk > 60 ? "HIGH" : avgRisk > 30 ? "MEDIUM" : "LOW",
-      total_devices: localDevices.length,
-      safe_devices: safe,
-      under_attack_devices: underAttack,
-      defended_devices: defended,
-      isolated_devices: isolated,
-      active_attacks_count: underAttack,
-      auto_defense_enabled: true
-    };
+    const res = await fetch(`${API_BASE_URL}/status`, { headers: getAuthHeaders() });
+    if (!res.ok) return { total_devices: 0, safe_devices: 0, under_attack_devices: 0, defended_devices: 0, hospital_risk_score: 15, hospital_risk_level: "LOW" };
+    return await res.json();
   },
 
-  // POST /api/attack
-  async triggerAttack(attackType, targetName, severity = "HIGH") {
-    try {
-      const res = await fetch(`${API_BASE_URL}/attack`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ attack_type: attackType, target: targetName, severity })
-      });
-      if (res.ok) {
-        return await res.json();
-      }
-    } catch (err) {
-      // Local fallback execution
-    }
-    const dev = localDevices.find(d => d.name.toLowerCase() === targetName.toLowerCase()) || localDevices[2];
-    dev.status = "UNDER_ATTACK";
-    dev.detected_threat = attackType;
-    dev.risk_score = attackType === "Ransomware" ? 86 : 82;
-    dev.cpu_usage = 92;
-    dev.network_traffic = 550;
-
-    const atkRecord = {
-      attack_id: `ATK-${Math.floor(Math.random()*9000+1000)}`,
-      attack_type: attackType,
-      target_device: dev.name,
-      severity,
-      risk_score: dev.risk_score,
-      timestamp: new Date().toLocaleTimeString(),
-      status: "ACTIVE"
-    };
-    localAttacks.unshift(atkRecord);
-
-    const recData = {
-      recommendation: `Isolate ${dev.name} immediately & deploy anti-${attackType.toLowerCase()} protocols.`,
-      reason: `${attackType} spike detected raising device risk to ${dev.risk_score}/100.`,
-      risk: dev.risk_score,
-      confidence: 95,
-      action_code: attackType === "DDoS" ? "BLOCK_TRAFFIC" : "ISOLATE_DEVICE"
-    };
-
-    return {
-      message: `${attackType} launched on ${dev.name}`,
-      attack: atkRecord,
-      device: dev,
-      ai_recommendation: recData
-    };
-  },
-
-  // POST /api/defense
-  async triggerDefense(targetName, actionCode = "ISOLATE_DEVICE") {
-    try {
-      const res = await fetch(`${API_BASE_URL}/defense`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ target: targetName, action: actionCode })
-      });
-      if (res.ok) {
-        return await res.json();
-      }
-    } catch (err) {
-      // Local fallback execution
-    }
-    const dev = localDevices.find(d => d.name.toLowerCase() === targetName.toLowerCase()) || localDevices[2];
-    
-    if (actionCode === "ISOLATE_DEVICE") {
-      dev.status = "ISOLATED";
-      dev.defense_action = "Network Isolation Engaged";
-      dev.risk_score = 30;
-      dev.cpu_usage = 20;
-    } else if (actionCode === "MARK_SAFE") {
-      dev.status = "SAFE";
-      dev.detected_threat = "None";
-      dev.defense_action = "System Cleaned & Verified Safe";
-      dev.risk_score = 15;
-      dev.cpu_usage = 18;
-    } else {
-      dev.status = "DEFENDED";
-      dev.defense_action = "Active Firewall Scrubbing";
-      dev.risk_score = 25;
-    }
-
-    const defRecord = {
-      defense_id: `DEF-${Math.floor(Math.random()*9000+1000)}`,
-      target_device: dev.name,
-      action: dev.defense_action,
-      response_time_ms: 320,
-      result: "SUCCESS",
-      timestamp: new Date().toLocaleTimeString()
-    };
-    localDefenses.unshift(defRecord);
-
-    return {
-      message: `Defense executed on ${dev.name}`,
-      defense: defRecord,
-      device: dev
-    };
-  },
-
-  // GET /api/ai/recommendation
-  async getAIRecommendation(targetName, attackType) {
-    try {
-      const res = await fetch(`${API_BASE_URL}/ai/recommendation?target=${encodeURIComponent(targetName)}&attack_type=${encodeURIComponent(attackType)}`);
-      if (res.ok) {
-        return await res.json();
-      }
-    } catch (err) {
-      // Fallback
-    }
-    return {
-      recommendation: `Isolate ${targetName} and apply firewall filter against ${attackType}.`,
-      reason: `Automated threat signature analysis detected anomalous pattern targeting ${targetName}.`,
-      risk: 86,
-      confidence: 94,
-      action_code: "ISOLATE_DEVICE",
-      threat_prediction: "Immediate threat of lateral network propagation.",
-      defense_comparison: [
-        { action: "Isolate Device", effectiveness: "98%", impact: "Stops encryption & network propagation" },
-        { action: "Block Port Traffic", effectiveness: "85%", impact: "Restricts C2 command relay" },
-        { action: "Passive Logging", effectiveness: "25%", impact: "Inadequate for active threats" }
-      ]
-    };
-  },
-
-  // POST /api/ai/apply
-  async applyAIRecommendation(targetName, actionCode) {
-    return this.triggerDefense(targetName, actionCode);
-  },
-
-  // GET /api/attacks
   async getAttacks() {
-    try {
-      const res = await fetch(`${API_BASE_URL}/attacks`);
-      if (res.ok) return await res.json();
-    } catch (err) {}
-    return localAttacks;
+    const res = await fetch(`${API_BASE_URL}/attacks`, { headers: getAuthHeaders() });
+    if (!res.ok) return [];
+    return await res.json();
   },
 
-  // GET /api/reports/summary
+  async getDefenses() {
+    const res = await fetch(`${API_BASE_URL}/defenses`, { headers: getAuthHeaders() });
+    if (!res.ok) return [];
+    return await res.json();
+  },
+
+  async getAuditLogs() {
+    const res = await fetch(`${API_BASE_URL}/audit-logs`, { headers: getAuthHeaders() });
+    if (!res.ok) return [];
+    return await res.json();
+  },
+
   async getReportsSummary() {
-    try {
-      const res = await fetch(`${API_BASE_URL}/reports/summary`);
-      if (res.ok) return await res.json();
-    } catch (err) {}
-    return {
-      title: "Smart Hospital Cybersecurity SOC Digital Twin Incident Report",
-      generated_at: new Date().toLocaleString(),
-      total_attacks: Math.max(1, localAttacks.length),
-      successful_defenses: Math.max(1, localDefenses.length),
-      isolated_devices: localDevices.filter(d => d.status === "ISOLATED").length,
-      avg_response_time_ms: 320,
-      avg_risk_score: Math.round(localDevices.reduce((a, b) => a + (b.risk_score || 15), 0) / localDevices.length),
-      most_targeted_device: "Hospital Server",
-      most_common_attack: "Ransomware",
-      defense_success_rate: "96.4%"
-    };
+    const res = await fetch(`${API_BASE_URL}/reports/summary`, { headers: getAuthHeaders() });
+    if (!res.ok) return null;
+    return await res.json();
   },
 
-  // POST /api/reset
+  async resetSystem() {
+    const res = await fetch(`${API_BASE_URL}/reset-system`, {
+      method: 'POST',
+      headers: getAuthHeaders()
+    });
+    return await res.json();
+  },
+
   async resetTwin() {
-    try {
-      const res = await fetch(`${API_BASE_URL}/reset`, { method: 'POST' });
-      if (res.ok) return await res.json();
-    } catch (err) {}
-    localDevices = JSON.parse(JSON.stringify(INITIAL_NODES));
-    localAttacks = [];
-    localDefenses = [];
-    return { message: "Digital Twin reset to SAFE state", devices: localDevices };
+    return this.resetSystem();
   }
 };
+

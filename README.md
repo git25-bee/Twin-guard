@@ -4,28 +4,32 @@ A comprehensive virtual hospital cybersecurity operations center (SOC) demonstra
 
 ---
 
-## 🏛 System Architecture & Component Division
+## 🏛 Clean Two-Folder Architecture
 
-### Module 1 – Digital Twin & Frontend
-- **Technologies**: React.js, Cytoscape.js, Lucide Icons, Recharts, CSS SOC Dark Theme
-- **Features**:
-  - Interactive Cytoscape.js network topology visualization of 12 smart hospital nodes (Internet, Firewall, Core Server, Patient DB, EHR, Workstations, MRI Machine, IoT Devices, Pharmacy, Lab).
-  - SOC Dashboard pages: Dashboard, Digital Twin, Live Network, Attack Simulation, Defense Center, Risk Analysis, AI Recommendations, Attack History, Reports, Settings.
-  - Dynamic status color transitions: 🟢 Safe | 🟡 Monitoring | 🟠 Suspicious | 🔴 Under Attack | 🔵 Defended | ⚫ Isolated.
-
-### Module 2 – Attack & Defense Simulation Engine
-- **Technologies**: Python, Flask, Flask-CORS, Multi-Threading
-- **Features**:
-  - **Attack Engine**: Simulates Ransomware, DDoS, SQL Injection, Zero-Day Malware, Insider Threats, and Phishing.
-  - **Defense Engine**: Python multi-threaded background monitor (Thread 1: Threat Monitor, Thread 2: Auto Mitigation) that triggers automated network isolation, traffic scrubbing, and system recovery.
-  - **Flask REST API**: Endpoints for devices state, attacks, defense actions, AI recommendations, and reports.
-
-### Module 3 – AI Engine & Database Module
-- **Technologies**: Google Gemini API (`gemini-2.5-flash`), Scikit-learn / Heuristic ML Engine, MySQL (with dual SQLite fallback)
-- **Features**:
-  - **Risk Engine**: Dynamically calculates per-device and overall hospital risk scores (0–100) categorized into LOW (0-30), MEDIUM (31-60), HIGH (61-80), and CRITICAL (81-100).
-  - **AI Recommendation Engine**: Generates real-time threat analysis, root cause rationale, confidence ratings, and defense comparison matrices.
-  - **Database Persistence**: Logs devices, attack events, defense actions, AI advice, and risk trends.
+```text
+hospital-cyber-digital-twin/
+│
+├── frontend/
+│   ├── src/
+│   ├── public/
+│   ├── package.json
+│   ├── vite.config.js
+│   └── other frontend configuration files
+│
+├── backend/
+│   ├── app.py
+│   ├── ai_engine.py
+│   ├── attack_engine.py
+│   ├── defense_engine.py
+│   ├── risk_engine.py
+│   ├── database.py
+│   ├── reports.py
+│   ├── requirements.txt
+│   └── other backend files
+│
+├── README.md
+└── .gitignore
+```
 
 ---
 
@@ -34,21 +38,20 @@ A comprehensive virtual hospital cybersecurity operations center (SOC) demonstra
 ### Prerequisites
 - Node.js (v18+)
 - Python 3.10+
-- (Optional) MySQL Server (SQLite is automatically used if MySQL is unconfigured)
 
 ---
 
-### Step 1: Launch Flask Backend API Server
+### Step 1: Launch Backend API Server
 ```bash
-cd attack_defense
-python -m pip install -r requirements.txt
+cd backend
+pip install -r requirements.txt
 python app.py
 ```
 *Backend runs on `http://localhost:5000`*
 
 ---
 
-### Step 2: Launch React Frontend Application
+### Step 2: Launch Frontend Application
 ```bash
 cd frontend
 npm install

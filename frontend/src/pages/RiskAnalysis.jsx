@@ -4,8 +4,9 @@ import RiskGauge from '../components/RiskGauge';
 import { Activity, ShieldAlert, AlertTriangle, Cpu } from 'lucide-react';
 
 export default function RiskAnalysis({ devices = [], statusData = {} }) {
-  const overallRisk = statusData.overall_risk_score || 15;
-  const riskLevel = statusData.risk_level || "LOW";
+  const overallRisk = statusData.overall_risk_score ?? statusData.hospital_risk_score ?? 15;
+  const riskLevel = statusData.risk_level || statusData.hospital_risk_level || "LOW";
+
 
   // Data for device risk comparison bar chart
   const deviceRiskData = devices.map(d => ({
@@ -45,30 +46,30 @@ export default function RiskAnalysis({ devices = [], statusData = {} }) {
         <div className="card" style={{ display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
           <h3 style={{ fontSize: '1.1rem', fontWeight: 600, marginBottom: '0.75rem' }}>Risk Score Threshold Classification</h3>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
-            <div style={{ background: 'rgba(16, 185, 129, 0.1)', border: '1px solid rgba(16, 185, 129, 0.3)', padding: '0.75rem', borderRadius: '8px' }}>
-              <div style={{ color: '#10B981', fontWeight: 700, fontSize: '0.85rem' }}>0 – 30 : LOW RISK</div>
-              <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '0.2rem' }}>
+            <div style={{ background: '#DCFCE7', border: '1px solid #86EFAC', padding: '0.75rem', borderRadius: '8px' }}>
+              <div style={{ color: '#15803D', fontWeight: 700, fontSize: '0.85rem' }}>0 – 30 : LOW RISK</div>
+              <div style={{ fontSize: '0.75rem', color: '#166534', marginTop: '0.2rem' }}>
                 All systems normal. Routine background monitoring active.
               </div>
             </div>
 
-            <div style={{ background: 'rgba(245, 158, 11, 0.1)', border: '1px solid rgba(245, 158, 11, 0.3)', padding: '0.75rem', borderRadius: '8px' }}>
-              <div style={{ color: '#F59E0B', fontWeight: 700, fontSize: '0.85rem' }}>31 – 60 : MEDIUM RISK</div>
-              <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '0.2rem' }}>
+            <div style={{ background: '#FEF3C7', border: '1px solid #FDE047', padding: '0.75rem', borderRadius: '8px' }}>
+              <div style={{ color: '#B45309', fontWeight: 700, fontSize: '0.85rem' }}>31 – 60 : MEDIUM RISK</div>
+              <div style={{ fontSize: '0.75rem', color: '#92400E', marginTop: '0.2rem' }}>
                 Anomalous traffic spikes or suspicious connection attempts detected.
               </div>
             </div>
 
-            <div style={{ background: 'rgba(249, 115, 22, 0.1)', border: '1px solid rgba(249, 115, 22, 0.3)', padding: '0.75rem', borderRadius: '8px' }}>
-              <div style={{ color: '#F97316', fontWeight: 700, fontSize: '0.85rem' }}>61 – 80 : HIGH RISK</div>
-              <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '0.2rem' }}>
+            <div style={{ background: '#FFEDD5', border: '1px solid #FDBA74', padding: '0.75rem', borderRadius: '8px' }}>
+              <div style={{ color: '#C2410C', fontWeight: 700, fontSize: '0.85rem' }}>61 – 80 : HIGH RISK</div>
+              <div style={{ fontSize: '0.75rem', color: '#9A3412', marginTop: '0.2rem' }}>
                 Active malicious payload execution or volumetric DDoS traffic.
               </div>
             </div>
 
-            <div style={{ background: 'rgba(239, 68, 68, 0.1)', border: '1px solid rgba(239, 68, 68, 0.3)', padding: '0.75rem', borderRadius: '8px' }}>
-              <div style={{ color: '#EF4444', fontWeight: 700, fontSize: '0.85rem' }}>81 – 100 : CRITICAL RISK</div>
-              <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '0.2rem' }}>
+            <div style={{ background: '#FEE2E2', border: '1px solid #FCA5A5', padding: '0.75rem', borderRadius: '8px' }}>
+              <div style={{ color: '#B91C1C', fontWeight: 700, fontSize: '0.85rem' }}>81 – 100 : CRITICAL RISK</div>
+              <div style={{ fontSize: '0.75rem', color: '#991B1B', marginTop: '0.2rem' }}>
                 Severe attack threatening Patient Database or core hospital server.
               </div>
             </div>
@@ -84,10 +85,10 @@ export default function RiskAnalysis({ devices = [], statusData = {} }) {
           <div style={{ width: '100%', height: '260px' }}>
             <ResponsiveContainer>
               <BarChart data={deviceRiskData}>
-                <XAxis dataKey="name" stroke="#94A3B8" fontSize={10} />
-                <YAxis domain={[0, 100]} stroke="#94A3B8" fontSize={11} />
-                <Tooltip contentStyle={{ background: '#1E293B', borderColor: '#334155' }} />
-                <Bar dataKey="risk" fill="#3B82F6" radius={[4, 4, 0, 0]} />
+                <XAxis dataKey="name" stroke="#64748B" fontSize={10} />
+                <YAxis domain={[0, 100]} stroke="#64748B" fontSize={11} />
+                <Tooltip contentStyle={{ background: '#FFFFFF', borderColor: '#E2E8F0', color: '#1E293B', borderRadius: '8px', boxShadow: '0 4px 6px -1px rgba(0,0,0,0.1)' }} />
+                <Bar dataKey="risk" fill="#2563EB" radius={[4, 4, 0, 0]} />
               </BarChart>
             </ResponsiveContainer>
           </div>
@@ -99,10 +100,10 @@ export default function RiskAnalysis({ devices = [], statusData = {} }) {
           <div style={{ width: '100%', height: '260px' }}>
             <ResponsiveContainer>
               <LineChart data={trendData}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#2D3748" />
-                <XAxis dataKey="time" stroke="#94A3B8" fontSize={11} />
-                <YAxis domain={[0, 100]} stroke="#94A3B8" fontSize={11} />
-                <Tooltip contentStyle={{ background: '#1E293B', borderColor: '#334155' }} />
+                <CartesianGrid strokeDasharray="3 3" stroke="#E2E8F0" />
+                <XAxis dataKey="time" stroke="#64748B" fontSize={11} />
+                <YAxis domain={[0, 100]} stroke="#64748B" fontSize={11} />
+                <Tooltip contentStyle={{ background: '#FFFFFF', borderColor: '#E2E8F0', color: '#1E293B', borderRadius: '8px', boxShadow: '0 4px 6px -1px rgba(0,0,0,0.1)' }} />
                 <Line type="monotone" dataKey="risk" stroke="#EF4444" strokeWidth={3} dot={{ r: 4 }} />
               </LineChart>
             </ResponsiveContainer>

@@ -25,6 +25,9 @@ __pycache__/
 .env
 .env.*
 !.env.example
+backend/firebase-key.json
+*service-account*.json
+
 
 # Database and Local Storage Cache
 *.db

@@ -1,46 +1,36 @@
-import React, { useState } from 'react';
-import { Search, Filter, History, ShieldAlert } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { Search, History, RefreshCw } from 'lucide-react';
+import { api } from '../services/api';
 
-export default function AttackHistory({ attackHistory = [] }) {
+export default function AttackHistory({ attackHistory = [], onRefresh }) {
   const [searchQuery, setSearchQuery] = useState('');
   const [severityFilter, setSeverityFilter] = useState('ALL');
+  const [dbLogs, setDbLogs] = useState([]);
+  const [loading, setLoading] = useState(false);
 
-  // Sample initial records if history empty
-  const defaultHistory = [
-    {
-      attack_id: 'ATK-9821',
-      attack_type: 'Ransomware',
-      target_device: 'Doctor PC',
-      severity: 'CRITICAL',
-      risk_score: 86,
-      timestamp: '2026-08-12 18:45:10',
-      status: 'MITIGATED'
-    },
-    {
-      attack_id: 'ATK-9820',
-      attack_type: 'DDoS',
-      target_device: 'Firewall',
-      severity: 'HIGH',
-      risk_score: 82,
-      timestamp: '2026-08-12 17:30:22',
-      status: 'MITIGATED'
-    },
-    {
-      attack_id: 'ATK-9819',
-      attack_type: 'SQL Injection',
-      target_device: 'Patient Database',
-      severity: 'CRITICAL',
-      risk_score: 88,
-      timestamp: '2026-08-12 16:15:05',
-      status: 'MITIGATED'
+  const fetchAttackHistory = async () => {
+    setLoading(true);
+    try {
+      const logs = await api.getAttacks();
+      setDbLogs(logs || []);
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setLoading(false);
     }
-  ];
+  };
 
-  const logs = attackHistory.length > 0 ? attackHistory : defaultHistory;
+  useEffect(() => {
+    fetchAttackHistory();
+  }, [attackHistory]);
+
+  const logs = dbLogs.length > 0 ? dbLogs : attackHistory;
 
   const filteredLogs = logs.filter((log) => {
-    const matchesSearch = log.target_device.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                          log.attack_type.toLowerCase().includes(searchQuery.toLowerCase());
+    const target = (log.target_device || log.target || '').toLowerCase();
+    const type = (log.attack_type || '').toLowerCase();
+    const query = searchQuery.toLowerCase();
+    const matchesSearch = target.includes(query) || type.includes(query);
     const matchesSeverity = severityFilter === 'ALL' || log.severity === severityFilter;
     return matchesSearch && matchesSeverity;
   });
@@ -53,12 +43,16 @@ export default function AttackHistory({ attackHistory = [] }) {
             <History color="var(--accent-blue)" size={24} /> Attack & Security Incident History
           </h1>
           <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>
-            Comprehensive audit log stored in MySQL/SQLite database for hospital SOC compliance.
+            Comprehensive security audit history loaded dynamically from Firebase Cloud Firestore.
           </p>
         </div>
 
         {/* Filters */}
         <div style={{ display: 'flex', gap: '0.75rem' }}>
+          <button className="btn btn-outline" style={{ fontSize: '0.8rem', padding: '0.45rem 0.75rem' }} onClick={fetchAttackHistory} disabled={loading}>
+            <RefreshCw size={14} /> Refresh Logs
+          </button>
+
           <div style={{ position: 'relative' }}>
             <Search size={16} style={{ position: 'absolute', left: 10, top: 10, color: 'var(--text-muted)' }} />
             <input
@@ -114,11 +108,11 @@ export default function AttackHistory({ attackHistory = [] }) {
             </thead>
             <tbody>
               {filteredLogs.map((log, idx) => (
-                <tr key={idx}>
+                <tr key={log.attack_id || idx}>
                   <td className="font-mono" style={{ color: 'var(--accent-blue)' }}>{log.attack_id}</td>
                   <td style={{ color: 'var(--text-muted)' }}>{log.timestamp}</td>
                   <td style={{ fontWeight: 600 }}>{log.attack_type}</td>
-                  <td style={{ fontWeight: 600 }}>{log.target_device}</td>
+                  <td style={{ fontWeight: 600 }}>{log.target_device || log.target}</td>
                   <td>
                     <span style={{
                       fontSize: '0.75rem',
@@ -141,6 +135,13 @@ export default function AttackHistory({ attackHistory = [] }) {
                   </td>
                 </tr>
               ))}
+              {filteredLogs.length === 0 && (
+                <tr>
+                  <td colSpan={7} style={{ textAlign: 'center', padding: '2rem', color: 'var(--text-muted)' }}>
+                    No attack incident records found in database. Launch a simulation to record events.
+                  </td>
+                </tr>
+              )}
             </tbody>
           </table>
         </div>

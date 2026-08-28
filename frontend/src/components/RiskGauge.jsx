@@ -11,7 +11,7 @@ export default function RiskGauge({ score = 15, level = "LOW" }) {
       case 'CRITICAL': return '#EF4444';
       case 'HIGH': return '#F97316';
       case 'MEDIUM': return '#F59E0B';
-      default: return '#10B981';
+      default: return '#22C55E';
     }
   };
 
@@ -24,7 +24,7 @@ export default function RiskGauge({ score = 15, level = "LOW" }) {
         <path
           d="M 20 100 A 80 80 0 0 1 180 100"
           fill="none"
-          stroke="#1E293B"
+          stroke="#E2E8F0"
           strokeWidth="18"
           strokeLinecap="round"
         />
@@ -33,9 +33,9 @@ export default function RiskGauge({ score = 15, level = "LOW" }) {
         <path
           d="M 20 100 A 80 80 0 0 1 60 38"
           fill="none"
-          stroke="#10B981"
+          stroke="#22C55E"
           strokeWidth="14"
-          opacity="0.8"
+          opacity="0.85"
         />
         {/* Medium Segment (30-60) */}
         <path
@@ -43,7 +43,7 @@ export default function RiskGauge({ score = 15, level = "LOW" }) {
           fill="none"
           stroke="#F59E0B"
           strokeWidth="14"
-          opacity="0.8"
+          opacity="0.85"
         />
         {/* High Segment (60-80) */}
         <path
@@ -51,7 +51,7 @@ export default function RiskGauge({ score = 15, level = "LOW" }) {
           fill="none"
           stroke="#F97316"
           strokeWidth="14"
-          opacity="0.8"
+          opacity="0.85"
         />
         {/* Critical Segment (80-100) */}
         <path
@@ -59,7 +59,7 @@ export default function RiskGauge({ score = 15, level = "LOW" }) {
           fill="none"
           stroke="#EF4444"
           strokeWidth="14"
-          opacity="0.8"
+          opacity="0.85"
         />
 
         {/* Needle */}
@@ -79,11 +79,11 @@ export default function RiskGauge({ score = 15, level = "LOW" }) {
           marginTop: '0.2rem',
           padding: '0.2rem 0.75rem',
           borderRadius: '12px',
-          background: `${currentColor}22`,
+          background: `${currentColor}15`,
           color: currentColor,
           fontSize: '0.75rem',
           fontWeight: 700,
-          border: `1px solid ${currentColor}44`
+          border: `1px solid ${currentColor}33`
         }}>
           RISK LEVEL: {level}
         </div>

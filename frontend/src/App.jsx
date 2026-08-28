@@ -2,8 +2,11 @@ import React, { useState, useEffect } from 'react';
 import Navbar from './components/Navbar';
 import Sidebar from './components/Sidebar';
 import DeviceModal from './components/DeviceModal';
+import Login from './pages/Login';
 import Dashboard from './pages/Dashboard';
 import DigitalTwin from './pages/DigitalTwin';
+import LiveNetwork from './pages/LiveNetwork';
+import DeviceManagement from './pages/DeviceManagement';
 import AttackSimulation from './pages/AttackSimulation';
 import DefenseCenter from './pages/DefenseCenter';
 import RiskAnalysis from './pages/RiskAnalysis';
@@ -15,6 +18,10 @@ import { api } from './services/api';
 import { INITIAL_NODES } from './data/initialNodes';
 
 export default function App() {
+  const [isAuthenticated, setIsAuthenticated] = useState(() => {
+    return localStorage.getItem('twinguard_auth') === 'true';
+  });
+
   const [activeTab, setActiveTab] = useState('dashboard');
   const [devices, setDevices] = useState(INITIAL_NODES);
   const [statusData, setStatusData] = useState({});
@@ -22,8 +29,22 @@ export default function App() {
   const [alert, setAlert] = useState(null);
   const [attackHistory, setAttackHistory] = useState([]);
 
+  // Login Handler
+  const handleLogin = () => {
+    setIsAuthenticated(true);
+    setActiveTab('dashboard');
+  };
+
+  // Logout Handler
+  const handleLogout = () => {
+    localStorage.removeItem('twinguard_auth');
+    localStorage.removeItem('twinguard_user');
+    setIsAuthenticated(false);
+  };
+
   // Fetch digital twin status & devices
   const refreshData = async () => {
+    if (!isAuthenticated) return;
     try {
       const devList = await api.getDevices();
       setDevices([...devList]);
@@ -35,10 +56,12 @@ export default function App() {
   };
 
   useEffect(() => {
-    refreshData();
-    const interval = setInterval(refreshData, 2000);
-    return () => clearInterval(interval);
-  }, []);
+    if (isAuthenticated) {
+      refreshData();
+      const interval = setInterval(refreshData, 2000);
+      return () => clearInterval(interval);
+    }
+  }, [isAuthenticated]);
 
   // Attack Trigger Handler
   const handleTriggerAttack = async (attackType, targetName, severity = 'HIGH') => {
@@ -84,14 +107,26 @@ export default function App() {
 
   // Reset Environment Handler
   const handleReset = async () => {
-    await api.resetTwin();
-    await refreshData();
-    setAlert({
-      type: 'SUCCESS',
-      message: 'Digital Twin environment reset to SAFE state.',
-      details: 'All 12 nodes initialized to green safe parameters.'
-    });
+    const confirmed = window.confirm("Are you sure you want to reset the Twin to a clean state?");
+    if (!confirmed) return;
+
+    try {
+      const res = await api.resetTwin();
+      await refreshData();
+      setAlert({
+        type: 'SUCCESS',
+        message: 'Twin reset successfully.',
+        details: 'System returned to a clean state with safe parameters and 0 active threats.'
+      });
+    } catch (err) {
+      console.error("Failed to reset Twin:", err);
+    }
   };
+
+  // Protect pages: show Login page if unauthenticated
+  if (!isAuthenticated) {
+    return <Login onLogin={handleLogin} />;
+  }
 
   // Render current tab content
   const renderContent = () => {
@@ -116,7 +151,22 @@ export default function App() {
             onMarkSafe={(target) => handleTriggerDefense(target, 'MARK_SAFE')}
           />
         );
+      case 'admin-devices':
+        return (
+          <DeviceManagement
+            devices={devices}
+            onRefresh={refreshData}
+          />
+        );
       case 'live-network':
+        return (
+          <LiveNetwork
+            devices={devices}
+            onTriggerAttack={handleTriggerAttack}
+            onTriggerDefense={handleTriggerDefense}
+            onRefresh={refreshData}
+          />
+        );
       case 'attack-sim':
         return (
           <AttackSimulation
@@ -150,6 +200,7 @@ export default function App() {
         return (
           <AttackHistory
             attackHistory={attackHistory}
+            onRefresh={refreshData}
           />
         );
       case 'reports':
@@ -164,7 +215,9 @@ export default function App() {
             alert={alert}
             onNodeSelect={(dev) => setSelectedDevice(dev)}
             onQuickAttack={handleTriggerAttack}
+            onTriggerDefense={handleTriggerDefense}
           />
+
         );
     }
   };
@@ -176,6 +229,7 @@ export default function App() {
         riskLevel={statusData.risk_level || 'LOW'}
         onReset={handleReset}
         activeAttacksCount={statusData.under_attack_devices || 0}
+        onLogout={handleLogout}
       />
 
       <div className="main-content-wrapper">

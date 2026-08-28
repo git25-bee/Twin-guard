@@ -107,7 +107,7 @@ export default function DeviceModal({ device, onClose, onIsolate, onMonitor, onM
         </div>
 
         {/* Defense Status & Last Activity */}
-        <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '1.5rem', background: '#111827', padding: '0.75rem', borderRadius: '6px' }}>
+        <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '1.5rem', background: '#F8FAFC', padding: '0.75rem', borderRadius: '6px', border: '1px solid #E2E8F0' }}>
           <div><strong>Defense Action:</strong> {device.defense_action || 'None'}</div>
           <div><strong>Last Activity:</strong> {device.last_activity || 'Just now'}</div>
         </div>
@@ -115,18 +115,18 @@ export default function DeviceModal({ device, onClose, onIsolate, onMonitor, onM
         {/* Action Buttons */}
         <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap' }}>
           <button
-            className="btn btn-danger"
+            className="btn btn-outline"
             style={{ flex: 1 }}
             onClick={() => { onIsolate(device.name); onClose(); }}
           >
-            <Lock size={15} /> Isolate Device
+            <Lock size={15} /> Isolate
           </button>
           <button
-            className="btn btn-secondary"
+            className="btn btn-primary"
             style={{ flex: 1 }}
             onClick={() => { onMonitor(device.name); onClose(); }}
           >
-            <Eye size={15} /> Start Monitoring
+            <Eye size={15} /> Defense
           </button>
           <button
             className="btn btn-success"
@@ -136,6 +136,8 @@ export default function DeviceModal({ device, onClose, onIsolate, onMonitor, onM
             <CheckCircle size={15} /> Mark Safe
           </button>
         </div>
+
+
       </div>
     </div>
   );

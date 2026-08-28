@@ -5,8 +5,9 @@
 export const INITIAL_NODES = [
   {
     id: "node-internet",
-    name: "Internet",
+    name: "Internet Gateway",
     device_type: "WAN Gateway",
+    hospital_department: "Perimeter",
     ip_address: "198.51.100.1",
     status: "SAFE",
     risk_score: 10,
@@ -19,8 +20,9 @@ export const INITIAL_NODES = [
   },
   {
     id: "node-firewall",
-    name: "Firewall",
+    name: "Hospital Firewall",
     device_type: "Perimeter Defense",
+    hospital_department: "IT Infrastructure",
     ip_address: "192.168.1.1",
     status: "SAFE",
     risk_score: 15,
@@ -33,8 +35,9 @@ export const INITIAL_NODES = [
   },
   {
     id: "node-server",
-    name: "Hospital Server",
+    name: "Core Hospital Server",
     device_type: "Core Infrastructure",
+    hospital_department: "Data Center",
     ip_address: "192.168.1.10",
     status: "SAFE",
     risk_score: 20,
@@ -47,8 +50,9 @@ export const INITIAL_NODES = [
   },
   {
     id: "node-patient-db",
-    name: "Patient Database",
+    name: "Patient Database (PHI)",
     device_type: "PHI / SQL Storage",
+    hospital_department: "Health Records",
     ip_address: "192.168.1.20",
     status: "SAFE",
     risk_score: 18,
@@ -61,8 +65,9 @@ export const INITIAL_NODES = [
   },
   {
     id: "node-ehr",
-    name: "EHR Server",
+    name: "EHR Server System",
     device_type: "Electronic Health Records",
+    hospital_department: "Health Records",
     ip_address: "192.168.1.25",
     status: "SAFE",
     risk_score: 16,
@@ -74,9 +79,10 @@ export const INITIAL_NODES = [
     last_activity: "Just now"
   },
   {
-    id: "node-doctor-pc",
-    name: "Doctor PC",
+    id: "ICU-MONITOR-01",
+    name: "ICU Bedside Monitor 01",
     device_type: "Clinical Workstation",
+    hospital_department: "ICU Ward",
     ip_address: "192.168.2.101",
     status: "SAFE",
     risk_score: 14,
@@ -88,37 +94,10 @@ export const INITIAL_NODES = [
     last_activity: "Just now"
   },
   {
-    id: "node-nurse-pc",
-    name: "Nurse PC",
-    device_type: "Ward Workstation",
-    ip_address: "192.168.2.102",
-    status: "SAFE",
-    risk_score: 12,
-    cpu_usage: 15,
-    memory_usage: 28,
-    network_traffic: 80,
-    detected_threat: "None",
-    defense_action: "None",
-    last_activity: "Just now"
-  },
-  {
-    id: "node-admin-pc",
-    name: "Admin PC",
-    device_type: "Management Workstation",
-    ip_address: "192.168.2.105",
-    status: "SAFE",
-    risk_score: 15,
-    cpu_usage: 20,
-    memory_usage: 35,
-    network_traffic: 110,
-    detected_threat: "None",
-    defense_action: "None",
-    last_activity: "Just now"
-  },
-  {
-    id: "node-mri",
-    name: "MRI Machine",
+    id: "VENTILATOR-01",
+    name: "ICU Ventilator Unit 01",
     device_type: "Critical Medical Imaging",
+    hospital_department: "ICU Ward",
     ip_address: "192.168.3.50",
     status: "SAFE",
     risk_score: 22,
@@ -130,9 +109,25 @@ export const INITIAL_NODES = [
     last_activity: "Just now"
   },
   {
-    id: "node-iot",
-    name: "IoT Medical Devices",
+    id: "PATIENT-MONITOR-01",
+    name: "Bedside Patient Monitor 01",
+    device_type: "Clinical Workstation",
+    hospital_department: "Bedside Ward",
+    ip_address: "192.168.2.102",
+    status: "SAFE",
+    risk_score: 12,
+    cpu_usage: 15,
+    memory_usage: 28,
+    network_traffic: 80,
+    detected_threat: "None",
+    defense_action: "None",
+    last_activity: "Just now"
+  },
+  {
+    id: "ECG-01",
+    name: "Bedside ECG Telemetry 01",
     device_type: "Infusion Pumps & Monitors",
+    hospital_department: "Cardiology Bedside",
     ip_address: "192.168.3.80",
     status: "SAFE",
     risk_score: 25,
@@ -144,9 +139,40 @@ export const INITIAL_NODES = [
     last_activity: "Just now"
   },
   {
+    id: "SMART-PUMP-01",
+    name: "ICU Smart Infusion Pump 01",
+    device_type: "Infusion Pumps & Monitors",
+    hospital_department: "ICU Ward",
+    ip_address: "192.168.3.81",
+    status: "SAFE",
+    risk_score: 18,
+    cpu_usage: 22,
+    memory_usage: 30,
+    network_traffic: 110,
+    detected_threat: "None",
+    defense_action: "None",
+    last_activity: "Just now"
+  },
+  {
+    id: "node-doctor-pc",
+    name: "Doctor Workstation",
+    device_type: "Clinical Workstation",
+    hospital_department: "Clinical Staff",
+    ip_address: "192.168.2.105",
+    status: "SAFE",
+    risk_score: 15,
+    cpu_usage: 20,
+    memory_usage: 35,
+    network_traffic: 110,
+    detected_threat: "None",
+    defense_action: "None",
+    last_activity: "Just now"
+  },
+  {
     id: "node-pharmacy",
-    name: "Pharmacy System",
+    name: "Pharmacy Medication Dispenser",
     device_type: "Medication Dispenser",
+    hospital_department: "Pharmacy Ward",
     ip_address: "192.168.2.110",
     status: "SAFE",
     risk_score: 14,
@@ -156,33 +182,19 @@ export const INITIAL_NODES = [
     detected_threat: "None",
     defense_action: "None",
     last_activity: "Just now"
-  },
-  {
-    id: "node-lab",
-    name: "Laboratory",
-    device_type: "Pathology Analyzer",
-    ip_address: "192.168.3.60",
-    status: "SAFE",
-    risk_score: 18,
-    cpu_usage: 26,
-    memory_usage: 42,
-    network_traffic: 160,
-    detected_threat: "None",
-    defense_action: "None",
-    last_activity: "Just now"
   }
 ];
 
 export const TOPOLOGY_EDGES = [
-  { source: "node-internet", target: "node-firewall", label: "External Pipe" },
-  { source: "node-firewall", target: "node-server", label: "DMZ Link" },
+  { source: "node-internet", target: "node-firewall", label: "WAN Gateway" },
+  { source: "node-firewall", target: "node-server", label: "DMZ Core" },
   { source: "node-server", target: "node-patient-db", label: "SQL Bus" },
-  { source: "node-server", target: "node-ehr", label: "EHR Sync" },
-  { source: "node-server", target: "node-doctor-pc", label: "LAN 1" },
-  { source: "node-server", target: "node-nurse-pc", label: "LAN 2" },
-  { source: "node-server", target: "node-admin-pc", label: "Management LAN" },
-  { source: "node-server", target: "node-mri", label: "VLAN Imaging" },
-  { source: "node-server", target: "node-iot", label: "IoT Gateway" },
-  { source: "node-server", target: "node-pharmacy", label: "Pharmacy Bus" },
-  { source: "node-server", target: "node-lab", label: "Lab Analyzer Bus" }
+  { source: "node-server", target: "node-ehr", label: "EHR Link" },
+  { source: "node-server", target: "ICU-MONITOR-01", label: "ICU LAN" },
+  { source: "node-server", target: "VENTILATOR-01", label: "ICU VLAN" },
+  { source: "node-server", target: "SMART-PUMP-01", label: "ICU Pump Bus" },
+  { source: "node-server", target: "PATIENT-MONITOR-01", label: "Bedside Ward" },
+  { source: "node-server", target: "ECG-01", label: "Bedside ECG" },
+  { source: "node-server", target: "node-doctor-pc", label: "Doctor LAN" },
+  { source: "node-server", target: "node-pharmacy", label: "Pharmacy Bus" }
 ];

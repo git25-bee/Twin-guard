@@ -1,7 +1,7 @@
 import React from 'react';
-import { ShieldAlert, RefreshCw, Activity, Cpu } from 'lucide-react';
+import { ShieldAlert, RefreshCw, Activity, LogOut } from 'lucide-react';
 
-export default function Navbar({ overallRisk, riskLevel, onReset, activeAttacksCount }) {
+export default function Navbar({ overallRisk, riskLevel, onReset, activeAttacksCount, onLogout }) {
   const getRiskColor = (level) => {
     switch (level) {
       case 'CRITICAL': return 'var(--accent-red)';
@@ -16,14 +16,14 @@ export default function Navbar({ overallRisk, riskLevel, onReset, activeAttacksC
       <div className="navbar-brand">
         <ShieldAlert size={26} color="var(--accent-blue)" />
         <div>
-          <span style={{ fontSize: '1.35rem', fontWeight: 800, background: 'linear-gradient(135deg, #60A5FA, #A78BFA)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
+          <span style={{ fontSize: '1.35rem', fontWeight: 800, background: 'linear-gradient(135deg, #2563EB, #0EA5E9)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
             TwinGuard
           </span>
           <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', fontWeight: 400 }}>
             Smart Hospital Cybersecurity Digital Twin
           </div>
         </div>
-        <span className="brand-badge" style={{ background: 'linear-gradient(135deg, #3B82F6, #10B981)' }}>ENTERPRISE SOC</span>
+        <span className="brand-badge" style={{ background: 'linear-gradient(135deg, #2563EB, #0EA5E9)' }}>ENTERPRISE SOC</span>
       </div>
 
       <div className="navbar-actions">
@@ -32,7 +32,7 @@ export default function Navbar({ overallRisk, riskLevel, onReset, activeAttacksC
           display: 'flex',
           alignItems: 'center',
           gap: '0.6rem',
-          background: 'rgba(30, 41, 59, 0.8)',
+          background: '#F8FAFC',
           padding: '0.4rem 0.8rem',
           borderRadius: '20px',
           border: `1px solid ${getRiskColor(riskLevel)}`
@@ -50,11 +50,11 @@ export default function Navbar({ overallRisk, riskLevel, onReset, activeAttacksC
             display: 'flex',
             alignItems: 'center',
             gap: '0.4rem',
-            background: 'rgba(239, 68, 68, 0.15)',
+            background: '#FEF2F2',
             color: 'var(--accent-red)',
             padding: '0.4rem 0.8rem',
             borderRadius: '20px',
-            border: '1px solid rgba(239, 68, 68, 0.4)',
+            border: '1px solid #FCA5A5',
             fontSize: '0.8rem',
             fontWeight: 600
           }}>
@@ -67,6 +67,13 @@ export default function Navbar({ overallRisk, riskLevel, onReset, activeAttacksC
         <button className="btn btn-outline" onClick={onReset} title="Reset all devices to Safe state">
           <RefreshCw size={14} /> Reset Twin
         </button>
+
+        {/* Logout Button */}
+        {onLogout && (
+          <button className="btn btn-outline" onClick={onLogout} title="Sign Out of TwinGuard SOC" style={{ color: '#DC2626', borderColor: '#FECACA', backgroundColor: '#FEF2F2' }}>
+            <LogOut size={14} color="#DC2626" /> Logout
+          </button>
+        )}
       </div>
     </header>
   );

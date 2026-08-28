@@ -2,6 +2,7 @@ import React from 'react';
 import {
   LayoutDashboard,
   Network,
+  Server,
   Zap,
   Shield,
   Activity,
@@ -16,6 +17,7 @@ export default function Sidebar({ activeTab, setActiveTab }) {
   const menuItems = [
     { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
     { id: 'digital-twin', label: 'Digital Twin', icon: Network },
+    { id: 'admin-devices', label: 'Device Management', icon: Server },
     { id: 'live-network', label: 'Live Network', icon: Radio },
     { id: 'attack-sim', label: 'Attack Simulation', icon: Zap },
     { id: 'defense-center', label: 'Defense Center', icon: Shield },
