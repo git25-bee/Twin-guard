@@ -5,38 +5,13 @@ import { api } from '../services/api';
 export default function Login({ onLogin }) {
   const [isRegistering, setIsRegistering] = useState(false);
   const [name, setName] = useState('');
-  const [email, setEmail] = useState('admin@twinguard.com');
-  const [password, setPassword] = useState('admin123');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
   const [role, setRole] = useState('Security Analyst');
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
   const [successMsg, setSuccessMsg] = useState('');
   const [loading, setLoading] = useState(false);
-
-  const handleQuickDemo = async () => {
-    setEmail('admin@twinguard.com');
-    setPassword('admin123');
-    setLoading(true);
-    setError('');
-    try {
-      const authResult = await api.login('admin@twinguard.com', 'admin123');
-      if (authResult && authResult.token) {
-        localStorage.setItem('twinguard_token', authResult.token);
-        localStorage.setItem('twinguard_auth', 'true');
-        localStorage.setItem('twinguard_user', JSON.stringify(authResult.user));
-        onLogin();
-      } else {
-        localStorage.setItem('twinguard_auth', 'true');
-        onLogin();
-      }
-    } catch (err) {
-      // Fallback local auth if API call fails
-      localStorage.setItem('twinguard_auth', 'true');
-      onLogin();
-    } finally {
-      setLoading(false);
-    }
-  };
 
 
   const handleSubmit = async (e) => {
@@ -390,28 +365,6 @@ export default function Login({ onLogin }) {
           >
             {loading ? (isRegistering ? 'Creating Account...' : 'Authenticating...') : (isRegistering ? 'Register Account' : 'Sign In')}
           </button>
-
-          {!isRegistering && (
-            <button
-              type="button"
-              onClick={handleQuickDemo}
-              disabled={loading}
-              style={{
-                width: '100%',
-                padding: '0.65rem 1rem',
-                fontSize: '0.85rem',
-                fontWeight: 600,
-                borderRadius: '8px',
-                border: '1px solid #BFDBFE',
-                backgroundColor: '#EFF6FF',
-                color: '#1D4ED8',
-                cursor: 'pointer',
-                transition: 'all 0.2s ease'
-              }}
-            >
-              ⚡ Quick Demo Access (Instant SOC Login)
-            </button>
-          )}
         </form>
       </div>
     </div>
