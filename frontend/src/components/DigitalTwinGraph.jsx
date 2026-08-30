@@ -1,101 +1,86 @@
 import React, { useEffect, useRef } from 'react';
 import cytoscape from 'cytoscape';
-import cola from 'cytoscape-cola';
 import { TOPOLOGY_EDGES } from '../data/initialNodes';
-
-// Register cola layout plugin
-try {
-  cytoscape.use(cola);
-} catch (e) {
-  // Plugin registered
-}
+import { getDeviceImageUri } from '../utils/deviceIcons';
 
 export default function DigitalTwinGraph({ devices = [], onNodeSelect, selectedNodeId }) {
   const containerRef = useRef(null);
   const cyRef = useRef(null);
 
-  // Map status to visual colors
-  const getStatusColor = (status) => {
-    switch (status) {
-      case 'ONLINE':
-      case 'SAFE': return '#22C55E';
-      case 'UNSTABLE':
-      case 'UNDER_MONITORING': return '#F59E0B';
-      case 'SUSPICIOUS': return '#F97316';
-      case 'UNDER_ATTACK':
-      case 'COMPROMISED': return '#EF4444';
-      case 'DEFENDED': return '#3B82F6';
-      case 'ISOLATED':
-      case 'OFFLINE': return '#64748B';
-      default: return '#22C55E';
-    }
-  };
-
-  const getDeviceEmoji = (dev) => {
-    const name = (dev?.name || '').toLowerCase();
-    const id = (dev?.id || '').toLowerCase();
-    const type = (dev?.device_type || '').toLowerCase();
-
-    if (name.includes('pc') || name.includes('workstation') || type.includes('staff') || id.includes('pc')) return '💻';
-    if (name.includes('server') || id.includes('server')) return '🖥️';
-    if (name.includes('firewall') || type.includes('perimeter') || id.includes('firewall')) return '🧱';
-    if (name.includes('database') || name.includes('db') || type.includes('db')) return '🗄️';
-    if (name.includes('ehr') || type.includes('ehr')) return '📋';
-    if (name.includes('ventilator')) return '🫁';
-    if (name.includes('ecg') || type.includes('cardiology')) return '🫀';
-    if (name.includes('pump') || name.includes('infusion')) return '💉';
-    if (name.includes('icu') || name.includes('monitor') || name.includes('bedside')) return '🩺';
-    if (name.includes('pharmacy')) return '💊';
-    if (name.includes('internet') || name.includes('gateway') || id.includes('internet')) return '🌐';
-    return '💻';
-  };
-
   useEffect(() => {
     if (!containerRef.current) return;
 
-    // Clean node names to avoid text overlap
+    // Build preset node layout with Core Hospital Server dead center in the middle
+    const serverNodeId = 'node-server';
+    const firewallNodeId = 'node-firewall';
+    const internetNodeId = 'node-internet';
+
+    const otherNodes = devices.filter(
+      (d) => d.id !== serverNodeId && d.id !== firewallNodeId && d.id !== internetNodeId
+    );
+
+    const presetPositions = {};
+    presetPositions[serverNodeId] = { x: 0, y: 0 }; // Core Hospital Server in the middle!
+    presetPositions[firewallNodeId] = { x: -140, y: -250 };
+    presetPositions[internetNodeId] = { x: -320, y: -320 };
+
+    const totalOthers = otherNodes.length;
+    const radiusX = 420;
+    const radiusY = 280;
+
+    otherNodes.forEach((dev, idx) => {
+      // Start radial distribution from top-right around the central server
+      const angle = (idx * (2 * Math.PI / Math.max(totalOthers, 1))) - (Math.PI / 3);
+      presetPositions[dev.id] = {
+        x: Math.round(Math.cos(angle) * radiusX),
+        y: Math.round(Math.sin(angle) * radiusY)
+      };
+    });
+
     const elementsNodes = devices.map((dev) => {
       const cleanName = dev.name || dev.id;
-      const emoji = getDeviceEmoji(dev);
-      const shortType = (dev.device_type || 'Device').split('/')[0].trim();
+      const dept = dev.hospital_department || (dev.device_type || 'Device').split('/')[0].trim();
+      const miniatureLabel = `${cleanName}\n(${dept})`;
+      const bgImage = getDeviceImageUri(dev);
+      const pos = presetPositions[dev.id] || { x: (Math.random() - 0.5) * 400, y: (Math.random() - 0.5) * 400 };
+
       return {
         data: {
           id: dev.id,
-          name: `${emoji} ${cleanName}`,
-          miniatureLabel: `${emoji}\n${cleanName}\n[${shortType}]`,
+          name: cleanName,
+          miniatureLabel: miniatureLabel,
           rawName: cleanName,
-          emoji: emoji,
+          bgImage: bgImage,
           device_type: dev.device_type,
           hospital_department: dev.hospital_department || 'General Ward',
           status: dev.status,
           risk_score: dev.risk_score,
-          color: getStatusColor(dev.status),
           is_attack: dev.status === 'UNDER_ATTACK' || dev.status === 'COMPROMISED',
           is_isolated: dev.status === 'ISOLATED',
           is_defended: dev.status === 'DEFENDED'
-        }
+        },
+        position: pos
       };
     });
 
-    // Build edges from TOPOLOGY_EDGES + dynamic links
-    const nodeIds = new Set(devices.map(d => d.id));
+    const nodeIds = new Set(devices.map((d) => d.id));
     const edgesList = [...TOPOLOGY_EDGES];
 
     devices.forEach((dev) => {
-      if (dev.id !== 'node-internet' && dev.id !== 'node-firewall' && dev.id !== 'node-server') {
-        const hasEdge = edgesList.some(e => e.source === dev.id || e.target === dev.id);
+      if (dev.id !== internetNodeId && dev.id !== firewallNodeId && dev.id !== serverNodeId) {
+        const hasEdge = edgesList.some((e) => e.source === dev.id || e.target === dev.id);
         if (!hasEdge) {
           edgesList.push({
-            source: "node-server",
+            source: serverNodeId,
             target: dev.id,
-            label: ""
+            label: ''
           });
         }
       }
     });
 
     const elementsEdges = edgesList
-      .filter(edge => nodeIds.has(edge.source) && nodeIds.has(edge.target))
+      .filter((edge) => nodeIds.has(edge.source) && nodeIds.has(edge.target))
       .map((edge, idx) => ({
         data: {
           id: `edge-${idx}`,
@@ -116,80 +101,106 @@ export default function DigitalTwinGraph({ devices = [], onNodeSelect, selectedN
         {
           selector: 'node',
           style: {
-            'shape': 'round-rectangle',
+            'shape': 'rectangle',
+            'width': 90,
+            'height': 90,
+            'background-opacity': 0, // Transparent background box!
+            'background-image': 'data(bgImage)',
+            'background-fit': 'contain',
+            'background-clip': 'none',
+            'border-width': 0,
             'label': 'data(miniatureLabel)',
-            'background-color': '#FFFFFF',
-            'color': '#0F172A',
-            'font-size': '10px',
-            'font-weight': '700',
-            'text-valign': 'center',
+            'color': '#000000', // Pure pitch-black darkened font!
+            'font-size': '13px',
+            'font-weight': '800', // Extra bold text!
+            'text-valign': 'bottom',
             'text-halign': 'center',
+            'text-margin-y': 8,
             'text-wrap': 'wrap',
-            'text-max-width': 105,
-            'text-background-opacity': 0,
-            'width': 115,
-            'height': 58,
-            'border-width': 3,
-            'border-color': 'data(color)',
+            'text-max-width': 160,
+            'line-height': 1.2,
+            'text-background-color': '#FFFFFF',
+            'text-background-opacity': 0.92,
+            'text-background-padding': '4px',
+            'text-background-shape': 'roundrectangle',
+            'text-border-color': '#CBD5E1',
+            'text-border-width': 1,
+            'text-border-opacity': 0.8,
             'overlay-opacity': 0,
-            'transition-property': 'background-color, border-color, bounds',
+            'transition-property': 'opacity',
             'transition-duration': '0.3s'
+          }
+        },
+        // Highlight server in middle with larger miniature size
+        {
+          selector: 'node[id = "node-server"]',
+          style: {
+            'width': 115,
+            'height': 115,
+            'font-size': '14px',
+            'text-margin-y': 12
           }
         },
         {
           selector: 'node[status = "UNDER_ATTACK"], node[status = "COMPROMISED"]',
           style: {
+            'width': 105,
+            'height': 105,
+            'border-width': 4,
             'border-color': '#EF4444',
-            'border-width': 5,
+            'border-style': 'solid',
             'background-color': '#FEF2F2',
-            'width': 120,
-            'height': 62
+            'background-opacity': 0.75,
+            'color': '#991B1B',
+            'text-background-color': '#FEF2F2',
+            'text-border-color': '#EF4444'
           }
         },
         {
           selector: 'node[status = "DEFENDED"]',
           style: {
+            'width': 100,
+            'height': 100,
+            'border-width': 3,
             'border-color': '#2563EB',
             'background-color': '#EFF6FF',
-            'border-width': 4
+            'background-opacity': 0.6,
+            'color': '#1E40AF',
+            'text-background-color': '#EFF6FF',
+            'text-border-color': '#3B82F6'
           }
         },
         {
           selector: 'node[status = "ISOLATED"], node[status = "OFFLINE"]',
           style: {
-            'background-color': '#F8FAFC',
-            'border-color': '#64748B',
-            'border-style': 'dashed',
-            'opacity': 0.8
+            'opacity': 0.5,
+            'color': '#334155'
           }
         },
-
         {
           selector: 'edge',
           style: {
-            'width': 2,
-            'line-color': '#CBD5E1',
-            'target-arrow-color': '#CBD5E1',
-            'target-arrow-shape': 'triangle',
+            'width': 2.5,
+            'line-color': '#3B82F6',
+            'target-arrow-color': '#3B82F6',
+            'target-arrow-shape': 'circle',
             'curve-style': 'bezier',
-            'opacity': 0.85
+            'opacity': 0.8
           }
         },
         {
-          selector: 'edge[source = "node-internet"]',
+          selector: 'edge[source = "node-internet"], edge[target = "node-internet"]',
           style: {
-            'line-color': '#2563EB',
-            'target-arrow-color': '#2563EB'
+            'width': 3,
+            'line-color': '#0284C7',
+            'target-arrow-color': '#0284C7'
           }
         }
       ],
       layout: {
-        name: 'breadthfirst',
-        directed: true,
-        padding: 50,
-        spacingFactor: 2.2,
-        avoidOverlap: true,
-        roots: '#node-internet'
+        name: 'preset',
+        fit: true,
+        padding: 40
       }
     });
 
@@ -198,11 +209,12 @@ export default function DigitalTwinGraph({ devices = [], onNodeSelect, selectedN
     // Node click handler
     cy.on('tap', 'node', (evt) => {
       const nodeData = evt.target.data();
-      const dev = devices.find((d) =>
-        d.id === nodeData.id ||
-        d.name === nodeData.rawName ||
-        d.name === nodeData.name ||
-        d.name.toLowerCase() === (nodeData.id || '').toLowerCase()
+      const dev = devices.find(
+        (d) =>
+          d.id === nodeData.id ||
+          d.name === nodeData.rawName ||
+          d.name === nodeData.name ||
+          d.name.toLowerCase() === (nodeData.id || '').toLowerCase()
       );
       if (dev && onNodeSelect) {
         onNodeSelect(dev);
@@ -222,6 +234,12 @@ export default function DigitalTwinGraph({ devices = [], onNodeSelect, selectedN
       }
     });
 
+    // Auto fit canvas space comfortably
+    setTimeout(() => {
+      if (cyRef.current) {
+        cyRef.current.fit(undefined, 35);
+      }
+    }, 100);
 
     return () => {
       if (cyRef.current) {
@@ -231,28 +249,45 @@ export default function DigitalTwinGraph({ devices = [], onNodeSelect, selectedN
   }, [devices]);
 
   return (
-    <div style={{ position: 'relative', width: '100%', height: '100%', minHeight: '520px' }}>
-      <div ref={containerRef} className="cytoscape-container" style={{ width: '100%', height: '100%', minHeight: '520px' }} />
-      
-      {/* Topology Legend Overlay */}
-      <div style={{
-        position: 'absolute',
-        bottom: 12,
-        left: 12,
-        background: 'rgba(255, 255, 255, 0.95)',
-        border: '1px solid #E2E8F0',
-        borderRadius: '8px',
-        padding: '0.6rem 0.85rem',
-        fontSize: '0.75rem',
-        color: '#0F172A',
-        boxShadow: '0 4px 15px rgba(37, 99, 235, 0.08)',
-        backdropFilter: 'blur(8px)',
-        display: 'flex',
-        gap: '1rem',
+    <div style={{ position: 'relative', width: '100%', height: '100%', minHeight: '580px' }}>
+      <div
+        ref={containerRef}
+        className="cytoscape-container"
+        style={{
+          width: '100%',
+          height: '100%',
+          minHeight: '580px',
+          borderRadius: '12px',
+          background: `
+            radial-gradient(circle at center, #FFFFFF 0%, #F8FAFC 70%, #F1F5F9 100%),
+            linear-gradient(to right, rgba(203, 213, 225, 0.3) 1px, transparent 1px),
+            linear-gradient(to bottom, rgba(203, 213, 225, 0.3) 1px, transparent 1px)
+          `,
+          backgroundSize: '100% 100%, 36px 36px, 36px 36px'
+        }}
+      />
 
-        alignItems: 'center',
-        zIndex: 10
-      }}>
+      {/* Topology Legend Overlay */}
+      <div
+        style={{
+          position: 'absolute',
+          bottom: 14,
+          left: 14,
+          background: 'rgba(255, 255, 255, 0.95)',
+          border: '1px solid #CBD5E1',
+          borderRadius: '8px',
+          padding: '0.6rem 0.9rem',
+          fontSize: '0.78rem',
+          fontWeight: 600,
+          color: '#020617',
+          boxShadow: '0 4px 18px rgba(15, 23, 42, 0.08)',
+          backdropFilter: 'blur(8px)',
+          display: 'flex',
+          gap: '1.1rem',
+          alignItems: 'center',
+          zIndex: 10
+        }}
+      >
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
           <span style={{ width: 10, height: 10, borderRadius: '50%', background: '#22C55E' }}></span> Online / Safe
         </div>
@@ -272,4 +307,3 @@ export default function DigitalTwinGraph({ devices = [], onNodeSelect, selectedN
     </div>
   );
 }
-

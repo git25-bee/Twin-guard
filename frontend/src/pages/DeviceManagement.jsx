@@ -114,20 +114,15 @@ export default function DeviceManagement({ devices = [], onRefresh }) {
     }
   };
 
-  const infraKeywords = ['server', 'firewall', 'gateway', 'database', 'ehr', 'phi', 'workstation', 'node', 'wan', 'dmz'];
-  
   const filteredDevices = devices.filter(d => {
-    const isInfra = infraKeywords.some(k => 
-      (d.device_type || '').toLowerCase().includes(k) || 
-      (d.name || '').toLowerCase().includes(k) ||
-      (d.id || '').toLowerCase().includes(k)
+    const query = searchQuery.toLowerCase();
+    return (
+      (d.name || '').toLowerCase().includes(query) ||
+      (d.id || '').toLowerCase().includes(query) ||
+      (d.device_type || '').toLowerCase().includes(query) ||
+      (d.ip_address || '').includes(query) ||
+      (d.hospital_department || '').toLowerCase().includes(query)
     );
-    const matchesSearch = (d.name || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
-      (d.id || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
-      (d.device_type || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
-      (d.ip_address || '').includes(searchQuery);
-
-    return (isInfra || devices.length <= 4) && matchesSearch;
   });
 
 

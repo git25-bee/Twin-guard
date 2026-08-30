@@ -1,12 +1,12 @@
 import React from 'react';
-import { Network, Bot, FileText, Settings as SettingsIcon } from 'lucide-react';
+import { Network, Server, Bot, FileText, Settings as SettingsIcon } from 'lucide-react';
 
 export default function Sidebar({ activeTab, setActiveTab }) {
   const menuItems = [
     { id: 'digital-twin', label: 'Digital Twin', icon: Network },
+    { id: 'device-management', label: 'Device Management', icon: Server },
     { id: 'attack-defense', label: 'Attack & Defense (AI Agent)', icon: Bot },
     { id: 'reports', label: 'Reports', icon: FileText },
-
     { id: 'settings', label: 'Settings', icon: SettingsIcon },
   ];
 

@@ -242,10 +242,14 @@ class DatabaseManager:
         self.db = None
         self.is_mock = False
         self.recent_audit_keys = {}
+        self.in_memory_devices = {}
+        self._initial_devices_backup = []
         self.init_firebase()
 
 
     def init_firebase(self):
+        import socket
+        socket.setdefaulttimeout(2.0)
         cred_path = os.environ.get("FIREBASE_CREDENTIALS_PATH")
         if not cred_path:
             default_path = os.path.join(os.path.dirname(__file__), "firebase-key.json")
@@ -256,14 +260,12 @@ class DatabaseManager:
         if cred_path and os.path.exists(cred_path):
             try:
                 self.db = FirestoreRESTClient(project_id, cred_path)
-                # Verify live Cloud Firestore connection
-                test_docs = self.db.collection('digital_twins').stream()
-                print(f"[Firebase Cloud] Successfully connected to Firebase Cloud Firestore for '{project_id}' via REST API!")
+                print(f"[Firebase Cloud] Connected to Cloud Firestore for '{project_id}'.")
                 return
             except Exception as e:
-                print(f"[Firebase Notice] REST API error ({e}). Operating in memory fallback mode.")
+                print(f"[Firebase Notice] REST API error ({e}). Using fast in-memory store.")
 
-        print("[Firebase Notice] Using fallback store.")
+        print("[Firebase Notice] Using fast in-memory store.")
         self.db = MockFirestoreDB()
         self.is_mock = True
 
@@ -347,6 +349,14 @@ class DatabaseManager:
 
     # --- DIGITAL TWINS CRUD OPERATIONS ---
     def get_devices(self):
+        if self.in_memory_devices:
+            return list(self.in_memory_devices.values())
+
+        if self._initial_devices_backup:
+            for dev in self._initial_devices_backup:
+                self.save_device(dev)
+            return list(self.in_memory_devices.values())
+
         name_map = {
             "node-internet": "Internet Gateway",
             "node-firewall": "Hospital Firewall",
@@ -362,7 +372,6 @@ class DatabaseManager:
             "node-pharmacy": "Pharmacy Medication Dispenser"
         }
 
-        devices = []
         try:
             docs = self.db.collection('digital_twins').stream()
             for doc in docs:
@@ -374,7 +383,7 @@ class DatabaseManager:
                 if not raw_name or raw_name == "Unknown Device":
                     raw_name = name_map.get(dev_id.lower()) or dev_id.replace('-', ' ').title()
 
-                devices.append({
+                dev_item = {
                     "id": dev_id,
                     "name": raw_name,
                     "device_type": d.get("device_type", "Clinical Workstation"),
@@ -395,10 +404,12 @@ class DatabaseManager:
                     "defense_action": d.get("defense_action", "None"),
                     "last_seen": d.get("last_seen", "Just now"),
                     "last_activity": d.get("last_activity", "Just now")
-                })
+                }
+                self.in_memory_devices[dev_id] = dev_item
         except Exception as e:
             print(f"[Firestore Error] get_devices failed: {e}")
-        return devices
+
+        return list(self.in_memory_devices.values())
 
 
     def save_device(self, dev):
@@ -406,7 +417,7 @@ class DatabaseManager:
         doc_data = {
             "id": dev["id"],
             "name": dev["name"],
-            "device_type": dev["device_type"],
+            "device_type": dev.get("device_type", "Clinical Workstation"),
             "hospital_department": dev.get("hospital_department", "ICU Ward"),
             "ip_address": dev.get("ip_address", "192.168.1.100"),
             "mac_address": dev.get("mac_address", "00:1A:2B:3C:4D:5E"),
@@ -425,28 +436,50 @@ class DatabaseManager:
             "last_seen": dev.get("last_seen", now_str),
             "last_activity": dev.get("last_activity", now_str)
         }
-        try:
-            self.db.collection('digital_twins').document(dev["id"]).set(doc_data)
-        except Exception as e:
-            print(f"[Firestore Error] save_device failed for {dev['id']}: {e}")
+        self.in_memory_devices[dev["id"]] = doc_data
+
+        def _sync_firestore():
+            try:
+                self.db.collection('digital_twins').document(dev["id"]).set(doc_data)
+            except Exception as e:
+                pass
+
+        import threading
+        threading.Thread(target=_sync_firestore, daemon=True).start()
 
     def update_device(self, device_id, updates):
-        try:
-            self.db.collection('digital_twins').document(device_id).set(updates, merge=True)
-        except Exception as e:
-            print(f"[Firestore Error] update_device failed for {device_id}: {e}")
+        for dev_key in self.in_memory_devices:
+            if dev_key.lower() == device_id.lower():
+                self.in_memory_devices[dev_key].update(updates)
+                
+                def _sync_update(k=dev_key, u=dict(updates)):
+                    try:
+                        self.db.collection('digital_twins').document(k).set(u, merge=True)
+                    except Exception as e:
+                        pass
+
+                import threading
+                threading.Thread(target=_sync_update, daemon=True).start()
+                break
 
     def delete_device(self, device_id):
-        try:
-            self.db.collection('digital_twins').document(device_id).delete()
-        except Exception as e:
-            print(f"[Firestore Error] delete_device failed for {device_id}: {e}")
+        target_key = next((k for k in self.in_memory_devices if k.lower() == device_id.lower()), None)
+        if target_key:
+            del self.in_memory_devices[target_key]
+
+            def _sync_delete(k=target_key):
+                try:
+                    self.db.collection('digital_twins').document(k).delete()
+                except Exception as e:
+                    pass
+
+            import threading
+            threading.Thread(target=_sync_delete, daemon=True).start()
 
     def seed_initial_devices(self, initial_devices):
-        current_devices = self.get_devices()
-        if not current_devices:
-            for dev in initial_devices:
-                self.save_device(dev)
+        self._initial_devices_backup = list(initial_devices)
+        for dev in initial_devices:
+            self.save_device(dev)
 
     # --- ALERTS MANAGEMENT ---
     def save_alert(self, alert):

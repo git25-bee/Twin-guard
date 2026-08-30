@@ -11,13 +11,17 @@ class AISecurityEngine:
         self.api_key = os.environ.get("GEMINI_API_KEY", "")
         self.client = None
 
-        if self.api_key:
+        # Ignore dummy / placeholder API keys
+        if self.api_key and not self.api_key.startswith("YOUR_") and not self.api_key.startswith("PLACEHOLDER") and len(self.api_key) > 20:
             try:
                 from google import genai
                 self.client = genai.Client(api_key=self.api_key)
                 print("[AI Engine] Gemini API client initialized successfully.")
             except Exception as e:
                 print(f"[AI Engine Warning] Failed to initialize Gemini API client: {e}. Using local AI fallback.")
+                self.client = None
+        else:
+            print("[AI Engine] Using ultra-fast local SOC AI Engine.")
 
     def get_recommendation(self, attack_type, target_device, risk_score, severity="HIGH", network_activity=None):
         """
@@ -60,7 +64,8 @@ class AISecurityEngine:
                 data = json.loads(cleaned_text.strip())
                 return data
             except Exception as e:
-                print(f"[AI Engine Warning] Gemini API call failed ({e}). Falling back to local AI engine.")
+                print(f"[AI Engine Warning] Gemini API call failed ({e}). Disabling remote client & using ultra-fast local AI engine.")
+                self.client = None
 
         # Local Fallback Recommendation Generator
         return self._local_heuristic_recommendation(attack_type, target_device, risk_score, severity)

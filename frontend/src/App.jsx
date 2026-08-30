@@ -4,6 +4,7 @@ import Sidebar from './components/Sidebar';
 import DeviceModal from './components/DeviceModal';
 import Login from './pages/Login';
 import DigitalTwin from './pages/DigitalTwin';
+import DeviceManagement from './pages/DeviceManagement';
 import AttackDefense from './pages/AttackDefense';
 import Reports from './pages/Reports';
 import Settings from './pages/Settings';
@@ -34,23 +35,32 @@ export default function App() {
     setIsAuthenticated(false);
   };
 
+  const isFetchingRef = React.useRef(false);
+
   // Fetch digital twin status & devices
   const refreshData = async () => {
-    if (!isAuthenticated) return;
+    if (!isAuthenticated || isFetchingRef.current) return;
+    isFetchingRef.current = true;
     try {
       const devList = await api.getDevices();
-      setDevices([...devList]);
+      if (devList && Array.isArray(devList) && devList.length > 0) {
+        setDevices([...devList]);
+      }
       const status = await api.getStatus();
-      setStatusData(status);
+      if (status) {
+        setStatusData(status);
+      }
     } catch (err) {
       console.error(err);
+    } finally {
+      isFetchingRef.current = false;
     }
   };
 
   useEffect(() => {
     if (isAuthenticated) {
       refreshData();
-      const interval = setInterval(refreshData, 2000);
+      const interval = setInterval(refreshData, 2500);
       return () => clearInterval(interval);
     }
   }, [isAuthenticated]);
@@ -105,6 +115,13 @@ export default function App() {
             onIsolate={(target) => handleTriggerDefense(target, 'ISOLATE_DEVICE')}
             onMonitor={(target) => handleTriggerDefense(target, 'UNDER_MONITORING')}
             onMarkSafe={(target) => handleTriggerDefense(target, 'MARK_SAFE')}
+          />
+        );
+      case 'device-management':
+        return (
+          <DeviceManagement
+            devices={devices}
+            onRefresh={refreshData}
           />
         );
       case 'attack-defense':
