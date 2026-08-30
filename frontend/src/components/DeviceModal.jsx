@@ -11,6 +11,27 @@ export default function DeviceModal({ device, onClose, onIsolate, onMonitor, onM
     return 'var(--accent-green)';
   };
 
+  const getDeviceEmoji = (dev) => {
+    const name = (dev?.name || '').toLowerCase();
+    const id = (dev?.id || '').toLowerCase();
+    const type = (dev?.device_type || '').toLowerCase();
+
+    if (name.includes('pc') || name.includes('workstation') || type.includes('staff') || id.includes('pc')) return '💻';
+    if (name.includes('server') || id.includes('server')) return '🖥️';
+    if (name.includes('firewall') || type.includes('perimeter') || id.includes('firewall')) return '🧱';
+    if (name.includes('database') || name.includes('db') || type.includes('db')) return '🗄️';
+    if (name.includes('ehr') || type.includes('ehr')) return '📋';
+    if (name.includes('ventilator')) return '🫁';
+    if (name.includes('ecg') || type.includes('cardiology')) return '🫀';
+    if (name.includes('pump') || name.includes('infusion')) return '💉';
+    if (name.includes('icu') || name.includes('monitor') || name.includes('bedside')) return '🩺';
+    if (name.includes('pharmacy')) return '💊';
+    if (name.includes('internet') || name.includes('gateway') || id.includes('internet')) return '🌐';
+    return '💻';
+  };
+
+  const emoji = getDeviceEmoji(device);
+
   return (
     <div className="modal-overlay" onClick={onClose}>
       <div className="modal-content" onClick={(e) => e.stopPropagation()}>
@@ -18,9 +39,11 @@ export default function DeviceModal({ device, onClose, onIsolate, onMonitor, onM
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '1.25rem' }}>
           <div>
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
+              <span style={{ fontSize: '1.4rem' }}>{emoji}</span>
               <h3 style={{ fontSize: '1.25rem', fontWeight: 700 }}>{device.name}</h3>
               <span className={`status-badge ${device.status}`}>{device.status}</span>
             </div>
+
             <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginTop: '0.2rem' }}>
               {device.device_type} • IP: <span className="font-mono">{device.ip_address}</span>
             </div>

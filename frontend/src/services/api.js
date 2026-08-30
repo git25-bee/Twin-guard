@@ -238,6 +238,15 @@ export const api = {
     return await res.json();
   },
 
+  async triggerAIAgentStep() {
+    const res = await fetch(`${API_BASE_URL}/ai-agent/step`, {
+      method: 'POST',
+      headers: getAuthHeaders()
+    });
+    if (!res.ok) throw new Error('AI Agent step failed');
+    return await res.json();
+  },
+
   async getStatus() {
     const res = await fetch(`${API_BASE_URL}/status`, { headers: getAuthHeaders() });
     if (!res.ok) return { total_devices: 0, safe_devices: 0, under_attack_devices: 0, defended_devices: 0, hospital_risk_score: 15, hospital_risk_level: "LOW" };

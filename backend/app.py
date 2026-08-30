@@ -505,6 +505,84 @@ def get_ai_recommendation():
     return jsonify(rec), 200
 
 
+COMPLETED_BATTLE_ROUNDS = []
+
+@app.route('/api/ai-agent/step', methods=['POST'])
+def ai_agent_step():
+    import random
+    devices = db_manager.get_devices()
+    under_attack = [d for d in devices if d.get("status") == "UNDER_ATTACK"]
+
+    if under_attack:
+        # AI Blue-Team Agent Defends
+        target_dev = random.choice(under_attack)
+        threat = target_dev.get("detected_threat", "Malware")
+
+        if "DDOS" in threat.upper():
+            action_code = "BLOCK_TRAFFIC"
+        elif "SQL" in threat.upper():
+            action_code = "PROTECT_DATABASE"
+        else:
+            action_code = "ISOLATE_DEVICE"
+
+        defense_res = defense_engine.execute_defense(target_dev["name"], action_code=action_code)
+        rec = ai_engine.get_recommendation(threat, target_dev["name"], target_dev.get("risk_score", 70))
+
+        # Record Completed Battle Round
+        round_num = len(COMPLETED_BATTLE_ROUNDS) + 1
+        round_record = {
+            "round_number": round_num,
+            "target_device": target_dev["name"],
+            "threat_simulated": threat,
+            "defense_applied": action_code,
+            "status": "COMPLETED & NEUTRALIZED",
+            "timestamp": datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        }
+        COMPLETED_BATTLE_ROUNDS.append(round_record)
+
+        db_manager.save_audit_log("AI Blue-Team Agent", f"Round {round_num} Completed: Defense '{action_code}' applied to {target_dev['name']}")
+
+        return jsonify({
+            "status": "success",
+            "agent_type": "BLUE_TEAM",
+            "action": f"Executed {action_code}",
+            "target_device": target_dev["name"],
+            "reasoning": f"AI Blue-Team detected active {threat} on {target_dev['name']}. Triggered automated countermeasure {action_code}. Battle Round {round_num} COMPLETED.",
+            "defense": defense_res,
+            "ai_recommendation": rec,
+            "round_completed": round_record,
+            "timestamp": datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        }), 200
+
+    else:
+        # AI Red-Team Agent Attacks
+        available_devices = [d for d in devices if d.get("status") in ["ONLINE", "SAFE"]]
+        if not available_devices:
+            available_devices = devices
+
+        target_dev = random.choice(available_devices)
+        attack_types = ["Ransomware", "DDoS", "SQL Injection", "Zero-Day Malware", "Phishing", "Insider Threat"]
+        attack_type = random.choice(attack_types)
+        severity = random.choice(["HIGH", "CRITICAL"])
+
+        attack_rec, target_updated = attack_engine.launch_attack(attack_type, target_dev["name"], severity)
+        rec = ai_engine.get_recommendation(attack_type, target_updated["name"], target_updated.get("risk_score", 85))
+
+        db_manager.save_audit_log("AI Red-Team Agent", f"Autonomous attack '{attack_type}' launched against {target_updated['name']}")
+
+        return jsonify({
+            "status": "success",
+            "agent_type": "RED_TEAM",
+            "action": f"Simulated {attack_type}",
+            "target_device": target_updated["name"],
+            "reasoning": f"AI Red-Team identified asset vulnerability on {target_updated['name']}. Initiated simulated {attack_type} ({severity}) payload execution.",
+            "attack": attack_rec,
+            "ai_recommendation": rec,
+            "timestamp": datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        }), 200
+
+
+
 @app.route('/api/status', methods=['GET'])
 def get_system_status():
     devices = db_manager.get_devices()
@@ -591,6 +669,8 @@ def get_reports_summary():
         "most_targeted_device": most_targeted,
         "most_common_attack": most_common_attack,
         "current_hospital_risk": {"risk_score": risk_score, "risk_level": risk_level},
+        "completed_battle_rounds_count": len(COMPLETED_BATTLE_ROUNDS),
+        "battle_rounds_log": COMPLETED_BATTLE_ROUNDS,
         "active_devices": [
             {
                 "id": d["id"],
@@ -600,6 +680,7 @@ def get_reports_summary():
                 "risk_score": d["risk_score"]
             } for d in devices
         ]
+
     }), 200
 
 

@@ -1,32 +1,16 @@
 import React from 'react';
-import {
-  LayoutDashboard,
-  Network,
-  Server,
-  Zap,
-  Shield,
-  Activity,
-  Brain,
-  History,
-  FileText,
-  Settings as SettingsIcon,
-  Radio
-} from 'lucide-react';
+import { Network, Bot, FileText, Settings as SettingsIcon } from 'lucide-react';
 
 export default function Sidebar({ activeTab, setActiveTab }) {
   const menuItems = [
-    { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
     { id: 'digital-twin', label: 'Digital Twin', icon: Network },
-    { id: 'admin-devices', label: 'Device Management', icon: Server },
-    { id: 'live-network', label: 'Live Network', icon: Radio },
-    { id: 'attack-sim', label: 'Attack Simulation', icon: Zap },
-    { id: 'defense-center', label: 'Defense Center', icon: Shield },
-    { id: 'risk-analysis', label: 'Risk Analysis', icon: Activity },
-    { id: 'ai-recommendations', label: 'AI Recommendations', icon: Brain },
-    { id: 'attack-history', label: 'Attack History', icon: History },
+    { id: 'attack-defense', label: 'Attack & Defense (AI Agent)', icon: Bot },
     { id: 'reports', label: 'Reports', icon: FileText },
+
     { id: 'settings', label: 'Settings', icon: SettingsIcon },
   ];
+
+
 
   return (
     <aside className="sidebar-container">

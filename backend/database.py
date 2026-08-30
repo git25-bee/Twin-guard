@@ -347,6 +347,21 @@ class DatabaseManager:
 
     # --- DIGITAL TWINS CRUD OPERATIONS ---
     def get_devices(self):
+        name_map = {
+            "node-internet": "Internet Gateway",
+            "node-firewall": "Hospital Firewall",
+            "node-server": "Core Hospital Server",
+            "node-patient-db": "Patient Database (PHI)",
+            "node-ehr": "EHR Server System",
+            "icu-monitor-01": "ICU Bedside Monitor 01",
+            "ventilator-01": "ICU Ventilator Unit 01",
+            "patient-monitor-01": "Bedside Patient Monitor 01",
+            "ecg-01": "Bedside ECG Telemetry 01",
+            "smart-pump-01": "ICU Smart Infusion Pump 01",
+            "node-doctor-pc": "Doctor Workstation",
+            "node-pharmacy": "Pharmacy Medication Dispenser"
+        }
+
         devices = []
         try:
             docs = self.db.collection('digital_twins').stream()
@@ -354,10 +369,14 @@ class DatabaseManager:
                 d = doc.to_dict()
                 if not d:
                     continue
-                d["id"] = d.get("id", doc.id)
+                dev_id = d.get("id", doc.id)
+                raw_name = d.get("name") or d.get("device_name") or d.get("title") or ""
+                if not raw_name or raw_name == "Unknown Device":
+                    raw_name = name_map.get(dev_id.lower()) or dev_id.replace('-', ' ').title()
+
                 devices.append({
-                    "id": d.get("id", doc.id),
-                    "name": d.get("name", "Unknown Device"),
+                    "id": dev_id,
+                    "name": raw_name,
                     "device_type": d.get("device_type", "Clinical Workstation"),
                     "hospital_department": d.get("hospital_department", "ICU Ward"),
                     "ip_address": d.get("ip_address", "192.168.1.100"),
@@ -380,6 +399,7 @@ class DatabaseManager:
         except Exception as e:
             print(f"[Firestore Error] get_devices failed: {e}")
         return devices
+
 
     def save_device(self, dev):
         now_str = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")

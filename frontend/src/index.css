@@ -454,4 +454,41 @@ tr:hover {
   transition: width 0.3s ease;
 }
 
+/* Print Media Styles for Formal Report Document Export */
+
+@media print {
+  body {
+    background: #ffffff !important;
+    background-image: none !important;
+    color: #0f172a !important;
+    font-size: 11pt;
+  }
+  
+  .sidebar-container,
+  header,
+  .btn,
+  .no-print {
+    display: none !important;
+  }
+  
+  .app-container,
+  main {
+    margin: 0 !important;
+    padding: 0 !important;
+    width: 100% !important;
+  }
+  
+  .print-only-document {
+    display: block !important;
+    width: 100% !important;
+    padding: 0 !important;
+  }
+  
+  .card {
+    box-shadow: none !important;
+    border: 1px solid #cbd5e1 !important;
+  }
+}
+
+
 

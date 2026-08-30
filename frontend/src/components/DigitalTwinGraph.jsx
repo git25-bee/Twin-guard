@@ -31,16 +31,40 @@ export default function DigitalTwinGraph({ devices = [], onNodeSelect, selectedN
     }
   };
 
+  const getDeviceEmoji = (dev) => {
+    const name = (dev?.name || '').toLowerCase();
+    const id = (dev?.id || '').toLowerCase();
+    const type = (dev?.device_type || '').toLowerCase();
+
+    if (name.includes('pc') || name.includes('workstation') || type.includes('staff') || id.includes('pc')) return '💻';
+    if (name.includes('server') || id.includes('server')) return '🖥️';
+    if (name.includes('firewall') || type.includes('perimeter') || id.includes('firewall')) return '🧱';
+    if (name.includes('database') || name.includes('db') || type.includes('db')) return '🗄️';
+    if (name.includes('ehr') || type.includes('ehr')) return '📋';
+    if (name.includes('ventilator')) return '🫁';
+    if (name.includes('ecg') || type.includes('cardiology')) return '🫀';
+    if (name.includes('pump') || name.includes('infusion')) return '💉';
+    if (name.includes('icu') || name.includes('monitor') || name.includes('bedside')) return '🩺';
+    if (name.includes('pharmacy')) return '💊';
+    if (name.includes('internet') || name.includes('gateway') || id.includes('internet')) return '🌐';
+    return '💻';
+  };
+
   useEffect(() => {
     if (!containerRef.current) return;
 
     // Clean node names to avoid text overlap
     const elementsNodes = devices.map((dev) => {
       const cleanName = dev.name || dev.id;
+      const emoji = getDeviceEmoji(dev);
+      const shortType = (dev.device_type || 'Device').split('/')[0].trim();
       return {
         data: {
           id: dev.id,
-          name: cleanName,
+          name: `${emoji} ${cleanName}`,
+          miniatureLabel: `${emoji}\n${cleanName}\n[${shortType}]`,
+          rawName: cleanName,
+          emoji: emoji,
           device_type: dev.device_type,
           hospital_department: dev.hospital_department || 'General Ward',
           status: dev.status,
@@ -77,7 +101,7 @@ export default function DigitalTwinGraph({ devices = [], onNodeSelect, selectedN
           id: `edge-${idx}`,
           source: edge.source,
           target: edge.target,
-          label: '' // Clear edge text labels to prevent text clutter and overlap
+          label: ''
         }
       }));
 
@@ -92,23 +116,21 @@ export default function DigitalTwinGraph({ devices = [], onNodeSelect, selectedN
         {
           selector: 'node',
           style: {
-            'label': 'data(name)',
-            'background-color': 'data(color)',
+            'shape': 'round-rectangle',
+            'label': 'data(miniatureLabel)',
+            'background-color': '#FFFFFF',
             'color': '#0F172A',
-            'font-size': '11px',
+            'font-size': '10px',
             'font-weight': '700',
-            'text-valign': 'bottom',
-            'text-margin-y': 8,
+            'text-valign': 'center',
+            'text-halign': 'center',
             'text-wrap': 'wrap',
-            'text-max-width': 100,
-            'text-background-color': '#FFFFFF',
-            'text-background-opacity': 0.9,
-            'text-background-padding': '4px',
-            'text-background-shape': 'roundrectangle',
-            'width': 48,
-            'height': 48,
+            'text-max-width': 105,
+            'text-background-opacity': 0,
+            'width': 115,
+            'height': 58,
             'border-width': 3,
-            'border-color': '#FFFFFF',
+            'border-color': 'data(color)',
             'overlay-opacity': 0,
             'transition-property': 'background-color, border-color, bounds',
             'transition-duration': '0.3s'
@@ -119,26 +141,29 @@ export default function DigitalTwinGraph({ devices = [], onNodeSelect, selectedN
           style: {
             'border-color': '#EF4444',
             'border-width': 5,
-            'width': 56,
-            'height': 56
+            'background-color': '#FEF2F2',
+            'width': 120,
+            'height': 62
           }
         },
         {
           selector: 'node[status = "DEFENDED"]',
           style: {
             'border-color': '#2563EB',
+            'background-color': '#EFF6FF',
             'border-width': 4
           }
         },
         {
           selector: 'node[status = "ISOLATED"], node[status = "OFFLINE"]',
           style: {
-            'background-color': '#94A3B8',
-            'border-color': '#475569',
+            'background-color': '#F8FAFC',
+            'border-color': '#64748B',
             'border-style': 'dashed',
-            'opacity': 0.75
+            'opacity': 0.8
           }
         },
+
         {
           selector: 'edge',
           style: {
@@ -173,13 +198,18 @@ export default function DigitalTwinGraph({ devices = [], onNodeSelect, selectedN
     // Node click handler
     cy.on('tap', 'node', (evt) => {
       const nodeData = evt.target.data();
-      const dev = devices.find((d) => d.id === nodeData.id || d.name === nodeData.name || d.name.toLowerCase() === (nodeData.id || '').toLowerCase());
+      const dev = devices.find((d) =>
+        d.id === nodeData.id ||
+        d.name === nodeData.rawName ||
+        d.name === nodeData.name ||
+        d.name.toLowerCase() === (nodeData.id || '').toLowerCase()
+      );
       if (dev && onNodeSelect) {
         onNodeSelect(dev);
       } else if (onNodeSelect) {
         onNodeSelect({
           id: nodeData.id,
-          name: nodeData.name,
+          name: nodeData.rawName || nodeData.name || nodeData.id,
           device_type: nodeData.device_type || 'Core Infrastructure Node',
           hospital_department: nodeData.hospital_department || 'IT Infrastructure',
           status: nodeData.status || 'ONLINE',
@@ -191,6 +221,7 @@ export default function DigitalTwinGraph({ devices = [], onNodeSelect, selectedN
         });
       }
     });
+
 
     return () => {
       if (cyRef.current) {

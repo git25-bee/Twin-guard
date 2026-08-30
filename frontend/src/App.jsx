@@ -3,15 +3,8 @@ import Navbar from './components/Navbar';
 import Sidebar from './components/Sidebar';
 import DeviceModal from './components/DeviceModal';
 import Login from './pages/Login';
-import Dashboard from './pages/Dashboard';
 import DigitalTwin from './pages/DigitalTwin';
-import LiveNetwork from './pages/LiveNetwork';
-import DeviceManagement from './pages/DeviceManagement';
-import AttackSimulation from './pages/AttackSimulation';
-import DefenseCenter from './pages/DefenseCenter';
-import RiskAnalysis from './pages/RiskAnalysis';
-import AIRecommendations from './pages/AIRecommendations';
-import AttackHistory from './pages/AttackHistory';
+import AttackDefense from './pages/AttackDefense';
 import Reports from './pages/Reports';
 import Settings from './pages/Settings';
 import { api } from './services/api';
@@ -22,17 +15,16 @@ export default function App() {
     return localStorage.getItem('twinguard_auth') === 'true';
   });
 
-  const [activeTab, setActiveTab] = useState('dashboard');
+  const [activeTab, setActiveTab] = useState('digital-twin');
   const [devices, setDevices] = useState(INITIAL_NODES);
   const [statusData, setStatusData] = useState({});
   const [selectedDevice, setSelectedDevice] = useState(null);
   const [alert, setAlert] = useState(null);
-  const [attackHistory, setAttackHistory] = useState([]);
 
   // Login Handler
   const handleLogin = () => {
     setIsAuthenticated(true);
-    setActiveTab('dashboard');
+    setActiveTab('digital-twin');
   };
 
   // Logout Handler
@@ -63,27 +55,6 @@ export default function App() {
     }
   }, [isAuthenticated]);
 
-  // Attack Trigger Handler
-  const handleTriggerAttack = async (attackType, targetName, severity = 'HIGH') => {
-    try {
-      const res = await api.triggerAttack(attackType, targetName, severity);
-      await refreshData();
-
-      setAlert({
-        type: 'ATTACK',
-        message: `${attackType} detected on ${targetName}!`,
-        details: `Severity: ${severity} • Device Risk: ${res.device?.risk_score || 86}/100`
-      });
-
-      // Update history
-      if (res.attack) {
-        setAttackHistory(prev => [res.attack, ...prev]);
-      }
-    } catch (err) {
-      console.error(err);
-    }
-  };
-
   // Defense Trigger Handler
   const handleTriggerDefense = async (targetName, actionCode = 'ISOLATE_DEVICE') => {
     try {
@@ -100,18 +71,13 @@ export default function App() {
     }
   };
 
-  // Apply AI Recommendation directly
-  const handleApplyAIRecommendation = async (targetName, actionCode) => {
-    await handleTriggerDefense(targetName, actionCode);
-  };
-
   // Reset Environment Handler
   const handleReset = async () => {
-    const confirmed = window.confirm("Are you sure you want to reset the Twin to a clean state?");
+    const confirmed = window.confirm("Are you sure you want to reset the Twin to a clean baseline state?");
     if (!confirmed) return;
 
     try {
-      const res = await api.resetTwin();
+      await api.resetTwin();
       await refreshData();
       setAlert({
         type: 'SUCCESS',
@@ -131,16 +97,6 @@ export default function App() {
   // Render current tab content
   const renderContent = () => {
     switch (activeTab) {
-      case 'dashboard':
-        return (
-          <Dashboard
-            devices={devices}
-            statusData={statusData}
-            alert={alert}
-            onNodeSelect={(dev) => setSelectedDevice(dev)}
-            onQuickAttack={handleTriggerAttack}
-          />
-        );
       case 'digital-twin':
         return (
           <DigitalTwin
@@ -151,56 +107,13 @@ export default function App() {
             onMarkSafe={(target) => handleTriggerDefense(target, 'MARK_SAFE')}
           />
         );
-      case 'admin-devices':
+      case 'attack-defense':
         return (
-          <DeviceManagement
-            devices={devices}
-            onRefresh={refreshData}
-          />
-        );
-      case 'live-network':
-        return (
-          <LiveNetwork
-            devices={devices}
-            onTriggerAttack={handleTriggerAttack}
-            onTriggerDefense={handleTriggerDefense}
-            onRefresh={refreshData}
-          />
-        );
-      case 'attack-sim':
-        return (
-          <AttackSimulation
-            devices={devices}
-            onTriggerAttack={handleTriggerAttack}
-          />
-        );
-      case 'defense-center':
-        return (
-          <DefenseCenter
-            devices={devices}
-            onTriggerDefense={handleTriggerDefense}
-            onReset={handleReset}
-          />
-        );
-      case 'risk-analysis':
-        return (
-          <RiskAnalysis
+          <AttackDefense
             devices={devices}
             statusData={statusData}
-          />
-        );
-      case 'ai-recommendations':
-        return (
-          <AIRecommendations
-            devices={devices}
-            onApplyRecommendation={handleApplyAIRecommendation}
-          />
-        );
-      case 'attack-history':
-        return (
-          <AttackHistory
-            attackHistory={attackHistory}
             onRefresh={refreshData}
+            onReset={handleReset}
           />
         );
       case 'reports':
@@ -209,18 +122,18 @@ export default function App() {
         return <Settings />;
       default:
         return (
-          <Dashboard
+          <DigitalTwin
             devices={devices}
-            statusData={statusData}
-            alert={alert}
             onNodeSelect={(dev) => setSelectedDevice(dev)}
-            onQuickAttack={handleTriggerAttack}
-            onTriggerDefense={handleTriggerDefense}
+            onIsolate={(target) => handleTriggerDefense(target, 'ISOLATE_DEVICE')}
+            onMonitor={(target) => handleTriggerDefense(target, 'UNDER_MONITORING')}
+            onMarkSafe={(target) => handleTriggerDefense(target, 'MARK_SAFE')}
           />
-
         );
     }
   };
+
+
 
   return (
     <div className="app-container">
