@@ -14,7 +14,8 @@ try:
 except ImportError:
     MQTT_AVAILABLE = False
 
-API_BASE = "http://localhost:5000/api"
+import os
+API_BASE = os.environ.get("API_BASE", "https://twin-guard-2.onrender.com/api")
 MQTT_BROKER = "test.mosquitto.org"
 MQTT_PORT = 1883
 

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import Navbar from './components/Navbar';
 import Sidebar from './components/Sidebar';
 import DeviceModal from './components/DeviceModal';
@@ -16,16 +16,16 @@ export default function App() {
     return localStorage.getItem('twinguard_auth') === 'true';
   });
 
-  const [activeTab, setActiveTab] = useState('digital-twin');
+  const [activeTab, setActiveTab] = useState('attack-defense');
   const [devices, setDevices] = useState(INITIAL_NODES);
   const [statusData, setStatusData] = useState({});
   const [selectedDevice, setSelectedDevice] = useState(null);
   const [alert, setAlert] = useState(null);
 
-  // Login Handler
+  // Login Handler - auto-navigate to attack-defense so AI agent starts immediately
   const handleLogin = () => {
     setIsAuthenticated(true);
-    setActiveTab('digital-twin');
+    setActiveTab('attack-defense');
   };
 
   // Logout Handler

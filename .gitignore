@@ -23,7 +23,9 @@ __pycache__/
 
 # Environment & Credentials
 .env
-.env.*
+.env.local
+.env.development
+!.env.production
 !.env.example
 backend/firebase-key.json
 *service-account*.json

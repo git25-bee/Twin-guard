@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Settings as SettingsIcon, Database, Key, Server, RefreshCw } from 'lucide-react';
 
 export default function Settings() {
-  const [apiUrl, setApiUrl] = useState('http://localhost:5000/api');
+  const [apiUrl, setApiUrl] = useState(import.meta.env.VITE_API_BASE_URL || '/api');
   const [autoDefense, setAutoDefense] = useState(true);
   const [pollingRate, setPollingRate] = useState(2000);
   const [saveToast, setSaveToast] = useState(false);

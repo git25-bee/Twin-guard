@@ -22,7 +22,7 @@ from ai_engine import AISecurityEngine
 from risk_engine import RiskEngine
 
 app = Flask(__name__)
-CORS(app, resources={r"/*": {"origins": "*"}})
+CORS(app, resources={r"/*": {"origins": "*"}}, supports_credentials=True)
 
 SECRET_KEY = os.environ.get("JWT_SECRET", "twinguard-super-secret-jwt-key-2026")
 app.config['SECRET_KEY'] = SECRET_KEY

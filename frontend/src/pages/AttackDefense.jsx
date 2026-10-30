@@ -98,17 +98,15 @@ export default function AttackDefense({ devices = [], statusData = {}, onRefresh
   };
 
 
-  // Continuous AI Agent Loop Timer
+  // Continuous AI Agent Loop Timer - fires immediately on mount, then at interval
   useEffect(() => {
-    let interval = null;
-    if (isAiRunning) {
-      interval = setInterval(() => {
-        runAiAgentStep();
-      }, speedMs);
-    }
-    return () => {
-      if (interval) clearInterval(interval);
-    };
+    if (!isAiRunning) return;
+    // Fire immediately on mount/start so users see activity right away
+    runAiAgentStep();
+    const interval = setInterval(() => {
+      runAiAgentStep();
+    }, speedMs);
+    return () => clearInterval(interval);
   }, [isAiRunning, speedMs]);
 
   // Manual Trigger Handler (Overrides)
